@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { client } from "../../sanity/lib/client";
-import { postsQuery } from "../../sanity/lib/queries";
+import { postsQuery, categoriesQuery } from "../../sanity/lib/queries";
+import { urlFor } from "../../sanity/lib/image";
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("en-AU", {
@@ -11,26 +12,15 @@ function formatDate(dateString) {
   });
 }
 
-function readTime(post) {
-  return "5 min read";
-}
-
-const categories = [
-  { label: "All", value: "" },
-  { label: "Visa & Immigration", value: "visa" },
-  { label: "Work Rights", value: "work" },
-  { label: "Housing", value: "housing" },
-  { label: "Banking", value: "banking" },
-  { label: "Tax & Money", value: "tax" },
-  { label: "University Life", value: "university" },
-  { label: "PR Pathways", value: "pr" },
-];
-
 export default async function Home() {
-  const posts = await client.fetch(postsQuery);
+  const [posts, categories] = await Promise.all([
+    client.fetch(postsQuery),
+    client.fetch(categoriesQuery),
+  ]);
+
   const featuredPost = posts[0];
-  const recentPosts = posts.slice(1, 4);
   const sidePosts = posts.slice(1, 4);
+  const recentPosts = posts.slice(1, 4);
 
   return (
     <div>
@@ -58,17 +48,23 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Topics Pills */}
+      {/* Topics Pills — now from Sanity */}
       <section className="border-b border-gray-100 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-5">
           <div className="flex gap-2 flex-wrap">
+            <Link
+              href="/blog"
+              className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
+            >
+              All
+            </Link>
             {categories.map((cat) => (
               <Link
-                key={cat.value}
-                href={cat.value ? `/blog?category=${cat.value}` : "/blog"}
+                key={cat._id}
+                href={`/blog?category=${cat.slug}`}
                 className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
               >
-                {cat.label}
+                {cat.title}
               </Link>
             ))}
           </div>
@@ -87,8 +83,22 @@ export default async function Home() {
                 href={`/blog/${featuredPost.slug.current}`}
                 className="group"
               >
-                <div className="bg-[var(--brand-green-light)] rounded-2xl h-64 flex items-center justify-center mb-5">
-                  <span className="text-5xl">📖</span>
+                <div className="relative bg-[var(--brand-green-light)] rounded-2xl h-64 overflow-hidden mb-5">
+                  {featuredPost.mainImage ? (
+                    <Image
+                      src={urlFor(featuredPost.mainImage)
+                        .width(800)
+                        .height(500)
+                        .url()}
+                      alt={featuredPost.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <span className="text-5xl">📖</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 mb-3">
                   {featuredPost.categories?.[0] && (
@@ -108,11 +118,10 @@ export default async function Home() {
                 <p className="text-xs text-gray-400">
                   {featuredPost.publishedAt &&
                     formatDate(featuredPost.publishedAt)}{" "}
-                  · {readTime(featuredPost)}
+                  · 5 min read
                 </p>
               </Link>
 
-              {/* Side Posts */}
               <div className="flex flex-col gap-5">
                 {sidePosts.map((post, i) => (
                   <Link
@@ -132,9 +141,7 @@ export default async function Home() {
                       <h3 className="text-sm font-medium text-gray-800 leading-snug mt-1 group-hover:text-[var(--brand-green)] transition-colors">
                         {post.title}
                       </h3>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {readTime(post)}
-                      </p>
+                      <p className="text-xs text-gray-400 mt-1">5 min read</p>
                     </div>
                   </Link>
                 ))}
@@ -143,7 +150,7 @@ export default async function Home() {
           </section>
         )}
 
-        {/* Recent Posts Grid */}
+        {/* Recent Posts */}
         <section>
           <p className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest mb-4">
             Latest Posts
@@ -158,8 +165,19 @@ export default async function Home() {
                 href={`/blog/${post.slug.current}`}
                 className="group border border-gray-100 rounded-2xl overflow-hidden hover:border-[var(--brand-green)] transition-colors"
               >
-                <div className="bg-[var(--brand-green-light)] h-44 flex items-center justify-center">
-                  <span className="text-4xl">📝</span>
+                <div className="relative bg-[var(--brand-green-light)] h-44 overflow-hidden">
+                  {post.mainImage ? (
+                    <Image
+                      src={urlFor(post.mainImage).width(600).height(400).url()}
+                      alt={post.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <span className="text-4xl">📝</span>
+                    </div>
+                  )}
                 </div>
                 <div className="p-5">
                   {post.categories?.[0] && (
@@ -171,8 +189,8 @@ export default async function Home() {
                     {post.title}
                   </h3>
                   <p className="text-xs text-gray-400">
-                    {post.publishedAt && formatDate(post.publishedAt)} ·{" "}
-                    {readTime(post)}
+                    {post.publishedAt && formatDate(post.publishedAt)} · 5 min
+                    read
                   </p>
                 </div>
               </Link>

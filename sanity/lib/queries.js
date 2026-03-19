@@ -26,3 +26,12 @@ export const postQuery = groq`
     "categories": categories[]->title,
   }
 `;
+
+export const categoriesQuery = groq`
+  *[_type == "category"] | order(title asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    description,
+  }
+`;
