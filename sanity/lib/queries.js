@@ -10,6 +10,7 @@ export const postsQuery = groq`
     mainImage,
     "author": author->name,
     "categories": categories[]->title,
+    "categorySlugs": categories[]->slug.current,
   }
 `;
 

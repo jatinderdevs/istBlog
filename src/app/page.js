@@ -12,203 +12,135 @@ function formatDate(dateString) {
   });
 }
 
-export default async function Home() {
-  const [posts, categories] = await Promise.all([
+export const metadata = {
+  title: "Blog — IST Blogs Australia",
+  description: "All guides and tips for international students in Australia.",
+};
+
+export default async function BlogPage({ searchParams }) {
+  const resolvedParams = await searchParams;
+  const selectedCategory = resolvedParams?.category || "";
+
+  const [allPosts, categories] = await Promise.all([
     client.fetch(postsQuery),
     client.fetch(categoriesQuery),
   ]);
 
-  const featuredPost = posts[0];
-  const sidePosts = posts.slice(1, 4);
-  const recentPosts = posts.slice(1, 4);
+  // Filter posts by category if one is selected
+  const posts = selectedCategory
+    ? allPosts.filter((post) =>
+        post.categories?.some(
+          (cat) => cat.toLowerCase().replace(/\s+/g, "-") === selectedCategory,
+        ),
+      )
+    : allPosts;
 
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="max-w-2xl">
-            <span className="inline-block bg-[var(--brand-green-light)] text-[var(--brand-green)] text-xs font-medium px-3 py-1 rounded-full mb-5">
-              For International Students in Australia
-            </span>
-            <h1 className="text-5xl font-medium text-gray-900 leading-tight mb-5">
-              Your guide to life & study in Australia
-            </h1>
-            <p className="text-lg text-gray-500 leading-relaxed mb-8">
-              Practical guides on visa rules, work rights, housing, banking and
-              everything you need to thrive as an international student.
-            </p>
-            <Link
-              href="/blog"
-              className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
-            >
-              Browse all guides
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div className="max-w-6xl mx-auto px-6 py-16">
+      {/* Header */}
+      <div className="mb-10">
+        <span className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest">
+          {selectedCategory ? "Filtered Posts" : "All Posts"}
+        </span>
+        <h1 className="text-4xl font-medium text-gray-900 mt-2 mb-4">
+          {selectedCategory
+            ? categories.find((c) => c.slug === selectedCategory)?.title ||
+              "Posts"
+            : "Guides & Tips"}
+        </h1>
+        <p className="text-gray-500 max-w-xl">
+          Everything you need to know about living and studying in Australia as
+          an international student.
+        </p>
+      </div>
 
-      {/* Topics Pills — now from Sanity */}
-      <section className="border-b border-gray-100 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-5">
-          <div className="flex gap-2 flex-wrap">
-            <Link
-              href="/blog"
-              className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
-            >
-              All
-            </Link>
-            {categories.map((cat) => (
-              <Link
-                key={cat._id}
-                href={`/blog?category=${cat.slug}`}
-                className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
-              >
-                {cat.title}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Category Filter Pills */}
+      <div className="flex gap-2 flex-wrap mb-10">
+        <Link
+          href="/blog"
+          className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
+            !selectedCategory
+              ? "border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
+              : "border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
+          }`}
+        >
+          All
+        </Link>
+        {categories.map((cat) => (
+          <Link
+            key={cat._id}
+            href={`/blog?category=${cat.slug}`}
+            className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
+              selectedCategory === cat.slug
+                ? "border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
+                : "border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
+            }`}
+          >
+            {cat.title}
+          </Link>
+        ))}
+      </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        {/* Featured Post */}
-        {featuredPost && (
-          <section className="mb-16">
-            <p className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest mb-4">
-              Featured
-            </p>
-            <div className="grid md:grid-cols-2 gap-8">
-              <Link
-                href={`/blog/${featuredPost.slug.current}`}
-                className="group"
-              >
-                <div className="relative bg-[var(--brand-green-light)] rounded-2xl h-64 overflow-hidden mb-5">
-                  {featuredPost.mainImage ? (
-                    <Image
-                      src={urlFor(featuredPost.mainImage)
-                        .width(800)
-                        .height(500)
-                        .url()}
-                      alt={featuredPost.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <span className="text-5xl">📖</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  {featuredPost.categories?.[0] && (
-                    <span className="text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-2 py-0.5 rounded-full">
-                      {featuredPost.categories[0]}
-                    </span>
-                  )}
-                </div>
-                <h2 className="text-2xl font-medium text-gray-900 leading-snug mb-3 group-hover:text-[var(--brand-green)] transition-colors">
-                  {featuredPost.title}
-                </h2>
-                {featuredPost.excerpt && (
-                  <p className="text-gray-500 leading-relaxed text-sm mb-3">
-                    {featuredPost.excerpt}
-                  </p>
-                )}
-                <p className="text-xs text-gray-400">
-                  {featuredPost.publishedAt &&
-                    formatDate(featuredPost.publishedAt)}{" "}
-                  · 5 min read
-                </p>
-              </Link>
-
-              <div className="flex flex-col gap-5">
-                {sidePosts.map((post, i) => (
-                  <Link
-                    key={post._id}
-                    href={`/blog/${post.slug.current}`}
-                    className="group flex gap-4 p-4 rounded-xl border border-gray-100 hover:border-[var(--brand-green)] transition-colors"
-                  >
-                    <span className="text-2xl font-medium text-gray-200 min-w-[32px]">
-                      0{i + 1}
-                    </span>
-                    <div>
-                      {post.categories?.[0] && (
-                        <span className="text-xs font-medium text-[var(--brand-green)]">
-                          {post.categories[0]}
-                        </span>
-                      )}
-                      <h3 className="text-sm font-medium text-gray-800 leading-snug mt-1 group-hover:text-[var(--brand-green)] transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-xs text-gray-400 mt-1">5 min read</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Recent Posts */}
-        <section>
-          <p className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest mb-4">
-            Latest Posts
+      {/* Posts Grid */}
+      {posts.length === 0 ? (
+        <div className="text-center py-20 border border-dashed border-gray-200 rounded-2xl">
+          <p className="text-gray-400 text-lg mb-3">
+            No posts in this category yet
           </p>
-          <h2 className="text-2xl font-medium text-gray-900 mb-8">
-            Fresh from the blog
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {recentPosts.map((post) => (
-              <Link
-                key={post._id}
-                href={`/blog/${post.slug.current}`}
-                className="group border border-gray-100 rounded-2xl overflow-hidden hover:border-[var(--brand-green)] transition-colors"
-              >
-                <div className="relative bg-[var(--brand-green-light)] h-44 overflow-hidden">
-                  {post.mainImage ? (
-                    <Image
-                      src={urlFor(post.mainImage).width(600).height(400).url()}
-                      alt={post.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <span className="text-4xl">📝</span>
-                    </div>
-                  )}
-                </div>
-                <div className="p-5">
+          <Link
+            href="/blog"
+            className="text-sm text-[var(--brand-green)] hover:underline"
+          >
+            View all posts
+          </Link>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {posts.map((post) => (
+            <Link
+              key={post._id}
+              href={`/blog/${post.slug.current}`}
+              className="group border border-gray-100 rounded-2xl overflow-hidden hover:border-[var(--brand-green)] transition-all hover:shadow-sm"
+            >
+              <div className="relative h-48 w-full bg-[var(--brand-green-light)]">
+                {post.mainImage ? (
+                  <Image
+                    src={urlFor(post.mainImage).width(600).height(400).url()}
+                    alt={post.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <span className="text-4xl">📝</span>
+                  </div>
+                )}
+              </div>
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-2">
                   {post.categories?.[0] && (
-                    <span className="text-xs font-medium text-[var(--brand-green)]">
+                    <span className="text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-2 py-0.5 rounded-full">
                       {post.categories[0]}
                     </span>
                   )}
-                  <h3 className="text-base font-medium text-gray-800 leading-snug mt-1 mb-3 group-hover:text-[var(--brand-green)] transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-xs text-gray-400">
-                    {post.publishedAt && formatDate(post.publishedAt)} · 5 min
-                    read
-                  </p>
                 </div>
-              </Link>
-            ))}
-          </div>
-
-          {posts.length > 4 && (
-            <div className="text-center mt-12">
-              <Link
-                href="/blog"
-                className="inline-block border border-[var(--brand-green)] text-[var(--brand-green)] text-sm px-6 py-3 rounded-lg hover:bg-[var(--brand-green)] hover:text-white transition-colors"
-              >
-                View all posts
-              </Link>
-            </div>
-          )}
-        </section>
-      </div>
+                <h2 className="text-base font-medium text-gray-800 leading-snug mb-3 group-hover:text-[var(--brand-green)] transition-colors">
+                  {post.title}
+                </h2>
+                {post.excerpt && (
+                  <p className="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2">
+                    {post.excerpt}
+                  </p>
+                )}
+                <p className="text-xs text-gray-400">
+                  {post.publishedAt && formatDate(post.publishedAt)} · 5 min
+                  read
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
