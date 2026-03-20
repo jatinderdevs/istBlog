@@ -1,7 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { client } from "../../sanity/lib/client";
-import { postsQuery, categoriesQuery } from "../../sanity/lib/queries";
+import {
+  postsQuery,
+  categoriesQuery,
+  featuredPostQuery,
+  settingsQuery,
+} from "../../sanity/lib/queries";
 import { urlFor } from "../../sanity/lib/image";
 
 function formatDate(dateString) {
@@ -13,14 +18,16 @@ function formatDate(dateString) {
 }
 
 export default async function Home() {
-  const [posts, categories] = await Promise.all([
+  const [posts, categories, featuredPost, settings] = await Promise.all([
     client.fetch(postsQuery),
     client.fetch(categoriesQuery),
+    client.fetch(featuredPostQuery),
+    client.fetch(settingsQuery),
   ]);
 
-  const featuredPost = posts[0];
-  const sidePosts = posts.slice(1, 4);
-  const recentPosts = posts.slice(1, 4);
+  const heroPost = featuredPost || posts[0];
+  const sidePosts = posts.filter((p) => p._id !== heroPost?._id).slice(0, 3);
+  const recentPosts = posts.filter((p) => p._id !== heroPost?._id).slice(0, 3);
 
   return (
     <div>
@@ -32,17 +39,18 @@ export default async function Home() {
               For International Students in Australia
             </span>
             <h1 className="text-4xl md:text-5xl font-medium text-gray-900 leading-tight mb-5">
-              Your guide to life & study in Australia
+              {settings?.heroHeading ||
+                "Your guide to life & study in Australia"}
             </h1>
             <p className="text-lg text-gray-500 leading-relaxed mb-8">
-              Practical guides on visa rules, work rights, housing, banking and
-              everything you need to thrive as an international student.
+              {settings?.heroSubtext ||
+                "Practical guides on visa rules, work rights, housing, banking and everything you need to thrive as an international student."}
             </p>
             <Link
               href="/blog"
               className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
             >
-              Browse all guides
+              {settings?.heroButtonText || "Browse all guides"}
             </Link>
           </div>
         </div>
@@ -73,24 +81,21 @@ export default async function Home() {
 
       <div className="max-w-6xl mx-auto px-6 py-16">
         {/* Featured Post */}
-        {featuredPost && (
+        {heroPost && (
           <section className="mb-16">
             <p className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest mb-4">
               Featured
             </p>
             <div className="grid md:grid-cols-2 gap-8">
-              <Link
-                href={`/blog/${featuredPost.slug.current}`}
-                className="group"
-              >
+              <Link href={`/blog/${heroPost.slug.current}`} className="group">
                 <div className="relative bg-[var(--brand-green-light)] rounded-2xl h-64 overflow-hidden mb-5">
-                  {featuredPost.mainImage ? (
+                  {heroPost.mainImage ? (
                     <Image
-                      src={urlFor(featuredPost.mainImage)
+                      src={urlFor(heroPost.mainImage)
                         .width(800)
                         .height(500)
                         .url()}
-                      alt={featuredPost.title}
+                      alt={heroPost.title}
                       fill
                       className="object-cover"
                     />
@@ -101,24 +106,23 @@ export default async function Home() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 mb-3">
-                  {featuredPost.categories?.[0] && (
+                  {heroPost.categories?.[0] && (
                     <span className="text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-2 py-0.5 rounded-full">
-                      {featuredPost.categories[0]}
+                      {heroPost.categories[0]}
                     </span>
                   )}
                 </div>
                 <h2 className="text-2xl font-medium text-gray-900 leading-snug mb-3 group-hover:text-[var(--brand-green)] transition-colors">
-                  {featuredPost.title}
+                  {heroPost.title}
                 </h2>
-                {featuredPost.excerpt && (
+                {heroPost.excerpt && (
                   <p className="text-gray-500 leading-relaxed text-sm mb-3">
-                    {featuredPost.excerpt}
+                    {heroPost.excerpt}
                   </p>
                 )}
                 <p className="text-xs text-gray-400">
-                  {featuredPost.publishedAt &&
-                    formatDate(featuredPost.publishedAt)}{" "}
-                  · 5 min read
+                  {heroPost.publishedAt && formatDate(heroPost.publishedAt)} · 5
+                  min read
                 </p>
               </Link>
 

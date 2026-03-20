@@ -7,6 +7,7 @@ export const postsQuery = groq`
     slug,
     publishedAt,
     excerpt,
+    featured,
     mainImage,
     "author": author->name,
     "categories": categories[]->title,
@@ -34,5 +35,28 @@ export const categoriesQuery = groq`
     title,
     "slug": slug.current,
     description,
+  }
+`;
+export const featuredPostQuery = groq`
+  *[_type == "post" && featured == true][0] {
+    _id,
+    title,
+    slug,
+    publishedAt,
+    excerpt,
+    mainImage,
+    "author": author->name,
+    "categories": categories[]->title,
+  }
+`;
+export const settingsQuery = groq`
+  *[_type == "settings"][0] {
+    title,
+    description,
+    keywords,
+    heroHeading,
+    heroSubtext,
+    heroButtonText,
+    footerTagline,
   }
 `;

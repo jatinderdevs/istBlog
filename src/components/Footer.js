@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Footer() {
+export default function Footer({ settings }) {
   return (
     <footer className="border-t border-gray-100 bg-gray-50 mt-20">
       <div className="max-w-6xl mx-auto px-6 py-12">
@@ -9,8 +9,8 @@ export default function Footer() {
           <div>
             <Image src="/logo.svg" alt="IST Blogs" width={120} height={52} />
             <p className="text-sm text-gray-500 mt-3 max-w-xs">
-              Helping international students thrive in Australia with practical,
-              honest guides.
+              {settings?.footerTagline ||
+                "Helping international students thrive in Australia with practical, honest guides."}
             </p>
           </div>
           <div className="flex gap-16">
@@ -18,7 +18,7 @@ export default function Footer() {
               <h4 className="text-sm font-medium text-gray-800 mb-3">Topics</h4>
               <div className="flex flex-col gap-2">
                 <Link
-                  href="/blog?category=visa"
+                  href="/blog?category=visa-immigration"
                   className="text-sm text-gray-500 hover:text-[#048442]"
                 >
                   Visa & Work
@@ -36,7 +36,7 @@ export default function Footer() {
                   Banking
                 </Link>
                 <Link
-                  href="/blog?category=tax"
+                  href="/blog?category=tax-money"
                   className="text-sm text-gray-500 hover:text-[#048442]"
                 >
                   Tax & Money
