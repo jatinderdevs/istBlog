@@ -32,16 +32,115 @@ const portableTextComponents = {
     image: ({ value }) => {
       if (!value?.asset) return null;
       return (
-        <div className="relative w-full h-96 my-8 rounded-2xl overflow-hidden">
-          <Image
-            src={urlFor(value).width(1200).height(800).url()}
-            alt={value.alt || "Blog image"}
-            fill
-            className="object-cover"
-          />
+        <figure className="my-8">
+          <div className="relative w-full h-96 rounded-2xl overflow-hidden">
+            <Image
+              src={urlFor(value).width(1200).height(800).url()}
+              alt={value.alt || "Blog image"}
+              fill
+              className="object-cover"
+            />
+          </div>
+          {value.caption && (
+            <figcaption className="text-center text-sm text-gray-400 mt-3">
+              {value.caption}
+            </figcaption>
+          )}
+        </figure>
+      );
+    },
+    table: ({ value }) => {
+      if (!value?.rows?.length) return null;
+      return (
+        <div className="overflow-x-auto my-8">
+          <table className="w-full border-collapse text-sm">
+            <tbody>
+              {value.rows.map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  className={
+                    rowIndex === 0
+                      ? "bg-[var(--brand-green)] text-white"
+                      : rowIndex % 2 === 0
+                        ? "bg-gray-50"
+                        : "bg-white"
+                  }
+                >
+                  {row.cells.map((cell, cellIndex) =>
+                    rowIndex === 0 ? (
+                      <th
+                        key={cellIndex}
+                        className="border border-gray-200 px-4 py-3 text-left font-medium"
+                      >
+                        {cell}
+                      </th>
+                    ) : (
+                      <td
+                        key={cellIndex}
+                        className="border border-gray-200 px-4 py-3"
+                      >
+                        {cell}
+                      </td>
+                    ),
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       );
     },
+    callout: ({ value }) => {
+      const styles = {
+        info: {
+          bg: "bg-blue-50",
+          border: "border-blue-400",
+          text: "text-blue-800",
+          emoji: "ℹ️",
+        },
+        warning: {
+          bg: "bg-yellow-50",
+          border: "border-yellow-400",
+          text: "text-yellow-800",
+          emoji: "⚠️",
+        },
+        success: {
+          bg: "bg-green-50",
+          border: "border-green-400",
+          text: "text-green-800",
+          emoji: "✅",
+        },
+        tip: {
+          bg: "bg-purple-50",
+          border: "border-purple-400",
+          text: "text-purple-800",
+          emoji: "💡",
+        },
+      };
+      const style = styles[value.type] || styles.info;
+      return (
+        <div
+          className={`${style.bg} ${style.border} border-l-4 rounded-r-xl px-5 py-4 my-6`}
+        >
+          <p className={`${style.text} text-sm leading-relaxed`}>
+            <span className="mr-2">{style.emoji}</span>
+            {value.text}
+          </p>
+        </div>
+      );
+    },
+    codeBlock: ({ value }) => (
+      <div className="my-6">
+        {value.language && (
+          <div className="bg-gray-800 text-gray-400 text-xs px-4 py-2 rounded-t-lg">
+            {value.language}
+          </div>
+        )}
+        <pre className="bg-gray-900 text-green-400 text-sm p-4 rounded-b-lg overflow-x-auto">
+          <code>{value.code}</code>
+        </pre>
+      </div>
+    ),
   },
   block: {
     normal: ({ children }) => (
@@ -62,6 +161,11 @@ const portableTextComponents = {
         {children}
       </h3>
     ),
+    h4: ({ children }) => (
+      <h4 className="text-lg font-medium text-gray-900 mt-6 mb-2">
+        {children}
+      </h4>
+    ),
     blockquote: ({ children }) => (
       <blockquote className="border-l-4 border-[var(--brand-green)] pl-5 py-1 my-6 text-gray-600 italic bg-[var(--brand-green-light)] rounded-r-lg">
         {children}
@@ -70,12 +174,12 @@ const portableTextComponents = {
   },
   list: {
     bullet: ({ children }) => (
-      <ul className="list-disc list-inside mb-5 space-y-2 text-gray-700">
+      <ul className="list-disc list-outside ml-6 mb-5 space-y-2 text-gray-700">
         {children}
       </ul>
     ),
     number: ({ children }) => (
-      <ol className="list-decimal list-inside mb-5 space-y-2 text-gray-700">
+      <ol className="list-decimal list-outside ml-6 mb-5 space-y-2 text-gray-700">
         {children}
       </ol>
     ),
@@ -93,6 +197,15 @@ const portableTextComponents = {
       <strong className="font-medium text-gray-900">{children}</strong>
     ),
     em: ({ children }) => <em className="italic">{children}</em>,
+    underline: ({ children }) => <span className="underline">{children}</span>,
+    "strike-through": ({ children }) => (
+      <span className="line-through">{children}</span>
+    ),
+    code: ({ children }) => (
+      <code className="bg-gray-100 text-[var(--brand-green)] px-1.5 py-0.5 rounded text-sm font-mono">
+        {children}
+      </code>
+    ),
     link: AnchorTag,
   },
 };
