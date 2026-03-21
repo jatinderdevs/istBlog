@@ -3,6 +3,7 @@ import Image from "next/image";
 import { client } from "../../../sanity/lib/client";
 import { postsQuery, categoriesQuery } from "../../../sanity/lib/queries";
 import { urlFor } from "../../../sanity/lib/image";
+export const revalidate = 60;
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("en-AU", {

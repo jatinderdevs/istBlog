@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { urlFor } from "../../../../sanity/lib/image";
+export const revalidate = 3600;
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("en-AU", {
     year: "numeric",

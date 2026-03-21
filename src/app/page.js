@@ -8,6 +8,7 @@ import {
   settingsQuery,
 } from "../../sanity/lib/queries";
 import { urlFor } from "../../sanity/lib/image";
+export const revalidate = 60;
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("en-AU", {
