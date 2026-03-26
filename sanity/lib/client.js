@@ -5,4 +5,11 @@ export const client = createClient({
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
   apiVersion: "2024-01-01",
   useCdn: false,
+  stega: false,
 });
+
+export function sanityFetch(query, params = {}) {
+  return client.fetch(query, params, {
+    next: { revalidate: 60 },
+  });
+}

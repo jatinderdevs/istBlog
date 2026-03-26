@@ -16,6 +16,9 @@ function formatDate(dateString) {
 export const metadata = {
   title: "Blog — IST Blogs Australia",
   description: "All guides and tips for international students in Australia.",
+  alternates: {
+    canonical: "https://www.internationalstudenttips.com.au/blog",
+  },
 };
 
 export default async function BlogPage({ searchParams }) {

@@ -3,12 +3,22 @@ import { postsQuery } from "../../sanity/lib/queries";
 
 const BASE_URL = "https://www.internationalstudenttips.com.au";
 
+export const revalidate = 60;
+
 export default async function sitemap() {
-  const posts = await client.fetch(postsQuery);
+  const posts = await client.fetch(
+    postsQuery,
+    {},
+    {
+      next: { revalidate: 60 },
+    },
+  );
 
   const postUrls = posts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug.current}`,
-    lastModified: post.publishedAt || new Date().toISOString(),
+    lastModified: post.publishedAt
+      ? new Date(post.publishedAt).toISOString()
+      : new Date().toISOString(),
     changeFrequency: "monthly",
     priority: 0.8,
   }));

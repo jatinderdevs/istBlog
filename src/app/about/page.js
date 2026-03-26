@@ -4,6 +4,9 @@ export const metadata = {
   title: "About — IST Blogs Australia",
   description:
     "Learn about International Student Tips — helping international students thrive in Australia.",
+  alternates: {
+    canonical: "https://www.internationalstudenttips.com.au/about",
+  },
 };
 
 export default function AboutPage() {

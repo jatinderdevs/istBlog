@@ -12,6 +12,9 @@ export async function generateMetadata() {
 
   return {
     metadataBase: new URL("https://www.internationalstudenttips.com.au"),
+    alternates: {
+      canonical: "https://www.internationalstudenttips.com.au",
+    },
     title: {
       default:
         settings?.title || "IST Blogs — International Student Tips Australia",

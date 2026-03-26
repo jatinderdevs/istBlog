@@ -246,6 +246,9 @@ export async function generateMetadata({ params }) {
   return {
     title: post.title,
     description: post.excerpt || "",
+    alternates: {
+      canonical: `https://www.internationalstudenttips.com.au/blog/${post.slug.current}`,
+    },
     openGraph: {
       title: post.title,
       description: post.excerpt || "",
