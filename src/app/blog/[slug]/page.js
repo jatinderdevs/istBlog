@@ -245,7 +245,8 @@ export async function generateMetadata({ params }) {
   if (!post) return {};
   return {
     title: post.title,
-    description: post.excerpt || "",
+    description:
+      post.excerpt || "Read this guide on International Student Tips.",
     alternates: {
       canonical: `https://www.internationalstudenttips.com.au/blog/${post.slug.current}`,
     },

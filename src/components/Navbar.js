@@ -28,17 +28,12 @@ export default function Navbar() {
             Blog
           </Link>
           <Link
-            href="/blog?category=visa"
+            href="/tools/rent-checker"
             className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
           >
-            Visa & Work
+            Rent Checker
           </Link>
-          <Link
-            href="/blog?category=housing"
-            className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
-          >
-            Housing
-          </Link>
+
           <Link
             href="/about"
             className="text-sm text-gray-600 hover:text-[#048442] transition-colors"

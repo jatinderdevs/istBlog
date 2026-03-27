@@ -31,6 +31,14 @@ export const postType = defineType({
       to: { type: "author" },
     }),
     defineField({
+      name: "excerpt",
+      title: "Excerpt",
+      type: "text",
+      rows: 3,
+      description:
+        "A short summary shown on listing pages and used for SEO meta descriptions.",
+    }),
+    defineField({
       name: "mainImage",
       type: "image",
       options: {

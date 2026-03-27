@@ -28,7 +28,7 @@ export default async function Home() {
 
   const heroPost = featuredPost || posts[0];
   const sidePosts = posts.filter((p) => p._id !== heroPost?._id).slice(0, 3);
-  const recentPosts = posts.filter((p) => p._id !== heroPost?._id).slice(0, 3);
+  const recentPosts = posts.filter((p) => p._id !== heroPost?._id).slice(0, 6);
 
   return (
     <div>
