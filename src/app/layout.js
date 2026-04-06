@@ -9,7 +9,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 const geist = Geist({ subsets: ["latin"] });
 
 export async function generateMetadata() {
-  <SpeedInsights />;
   const settings = await client.fetch(settingsQuery);
 
   return {
@@ -97,6 +96,7 @@ export default async function RootLayout({ children }) {
         <Navbar />
         <main>{children}</main>
         <Footer settings={settings} />
+        <SpeedInsights />
       </body>
     </html>
   );
