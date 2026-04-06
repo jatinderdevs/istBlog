@@ -4,10 +4,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { client } from "../../sanity/lib/client";
 import { settingsQuery } from "../../sanity/lib/queries";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geist = Geist({ subsets: ["latin"] });
 
 export async function generateMetadata() {
+  <SpeedInsights />;
   const settings = await client.fetch(settingsQuery);
 
   return {

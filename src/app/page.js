@@ -214,6 +214,24 @@ export default async function Home() {
             </div>
           )}
         </section>
+
+        <section className="bg-green-600 my-6 py-10 rounded-2xl">
+          <div className="grid md:grid-cols-2 sm:grid-cols-1 justify-between  items-center gap-5 px-6 py-2">
+            <div className="">
+              <h1 className="text-2xl/7 font-bold text-white  sm:text-3xl ">
+                Rent Affordability Calculator for International Students
+              </h1>
+            </div>
+            <div className="md:text-right sm:text-center ">
+              <Link
+                href="/tools/rent-checker"
+                className="bg-white hover:bg-white-700  text-green font-green py-2 px-4 rounded hover:font-green"
+              >
+                Click here →
+              </Link>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
