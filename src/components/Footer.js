@@ -12,6 +12,20 @@ export default function Footer({ settings }) {
               {settings?.footerTagline ||
                 "Helping international students thrive in Australia with practical, honest guides."}
             </p>
+            <div className="grid py-3 md:grid-cols-2 gap-1">
+              <a
+                target="_blank"
+                href="https://www.facebook.com/profile.php?id=61572900125280"
+              >
+                <img src="/fb.png"></img>
+              </a>
+              <a
+                target="_blank"
+                href="https://www.instagram.com/internationalstudenttips/"
+              >
+                <img src="/insta.png"></img>
+              </a>
+            </div>
           </div>
           <div className="flex gap-16">
             <div>
