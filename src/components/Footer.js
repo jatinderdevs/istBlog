@@ -59,6 +59,12 @@ export default function Footer({ settings }) {
                   Blog
                 </Link>
                 <Link
+                  href="/tools/rent-checker"
+                  className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
+                >
+                  Rent Checker
+                </Link>
+                <Link
                   href="/about"
                   className="text-sm text-gray-500 hover:text-[#048442]"
                 >
