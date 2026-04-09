@@ -60,3 +60,26 @@ export const settingsQuery = groq`
     footerTagline,
   }
 `;
+
+export const postsByCategoryQuery = groq`
+  *[_type == "post" && $slug in categories[]->slug.current] | order(publishedAt desc) {
+    _id,
+    title,
+    slug,
+    publishedAt,
+    excerpt,
+    mainImage,
+    "author": author->name,
+    "categories": categories[]->title,
+    "categorySlugs": categories[]->slug.current,
+  }
+`;
+
+export const categoryBySlugQuery = groq`
+  *[_type == "category" && slug.current == $slug][0] {
+    _id,
+    title,
+    "slug": slug.current,
+    description,
+  }
+`;

@@ -70,7 +70,7 @@ export default async function Home() {
             {categories.map((cat) => (
               <Link
                 key={cat._id}
-                href={`/blog?category=${cat.slug}`}
+                href={`/blog/category/${cat.slug}`}
                 className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
               >
                 {cat.title}

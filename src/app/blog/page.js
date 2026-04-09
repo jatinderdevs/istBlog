@@ -68,7 +68,7 @@ export default async function BlogPage({ searchParams }) {
         {categories.map((cat) => (
           <Link
             key={cat._id}
-            href={`/blog?category=${cat.slug}`}
+            href={`/blog/category/${cat.slug}`}
             className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
               selectedCategory === cat.slug
                 ? "border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
