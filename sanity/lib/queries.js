@@ -62,9 +62,9 @@ export const settingsQuery = groq`
 `;
 
 export const postsByCategoryQuery = groq`
-  *[_type == "post" 
-    && count((categories[]->slug.current)[@ == $slug]) > 0
-  ] | order(publishedAt desc) {
+ *[_type == "post" 
+    && $slug in categories[]->slug.current
+  ] | order(publishedAt desc) [0...20] {
     _id,
     title,
     slug,
