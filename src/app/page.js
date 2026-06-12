@@ -48,7 +48,7 @@ export default async function Home() {
                 "Practical guides on visa rules, work rights, housing, banking and everything you need to thrive as an international student."}
             </p>
             <Link
-              href="/blog"
+              href="/blog/international-student-guide-explore-australia"
               className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
             >
               {settings?.heroButtonText || "Browse all guides"}
@@ -214,7 +214,6 @@ export default async function Home() {
             </div>
           )}
         </section>
-
 
         <section className="bg-green-600 my-6 py-10 rounded-2xl">
           <div className="grid md:grid-cols-2 sm:grid-cols-1 justify-between  items-center gap-5 px-6 py-2">

@@ -20,6 +20,7 @@ import CityTabBlock from "@/components/blog/CityTabBlock";
 import FinalCTA from "@/components/blog/FinalCTA";
 
 export const revalidate = 60;
+export const dynamicParams = true;
 
 const sectionComponentMap = {
   guideSection: GuideSectionBlock,
