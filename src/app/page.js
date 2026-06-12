@@ -48,7 +48,8 @@ export default async function Home() {
                 "Practical guides on visa rules, work rights, housing, banking and everything you need to thrive as an international student."}
             </p>
             <Link
-              href="/blog/international-student-guide-explore-australia"
+              href={"/blog/international-student-guide-explore-australia"}
+              prefetch={false}
               className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
             >
               {settings?.heroButtonText || "Browse all guides"}
