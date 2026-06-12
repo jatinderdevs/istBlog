@@ -85,3 +85,4 @@ export const categoryBySlugQuery = groq`
     description,
   }
 `;
+

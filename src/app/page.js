@@ -215,6 +215,7 @@ export default async function Home() {
           )}
         </section>
 
+
         <section className="bg-green-600 my-6 py-10 rounded-2xl">
           <div className="grid md:grid-cols-2 sm:grid-cols-1 justify-between  items-center gap-5 px-6 py-2">
             <div className="">
