@@ -37,7 +37,7 @@ export default function FinalCTA() {
           </button>
         </div>
 
-        <div className="mx-auto mt-10 max-w-md border-t border-white/20 pt-8">
+        {/* <div className="mx-auto mt-10 max-w-md border-t border-white/20 pt-8">
           <p className="mb-3 text-sm font-medium">Get more guides like this</p>
           <form
             onSubmit={(e) => e.preventDefault()}
@@ -55,7 +55,7 @@ export default function FinalCTA() {
               Get more guides
             </button>
           </form>
-        </div>
+        </div> */}
       </div>
     </section>
   );
