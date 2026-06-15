@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Aus Student Blog
 
-Next.js 16.2 + Sanity CMS blog for international students. Domain: `internationalstudenttips.com.au`
+Next.js 16.2 + React 19.2 + Sanity CMS blog. Domain: `internationalstudenttips.com.au`
 
 ## Commands
 
@@ -15,7 +15,7 @@ Next.js 16.2 + Sanity CMS blog for international students. Domain: `internationa
 | `npm run dev` | Dev server on `localhost:3000` |
 | `npm run build` | Production build |
 | `npm run start` | Production server |
-| `npm run lint` | ESLint v9 flat config |
+| `npm run lint` | ESLint v9 flat config (`eslint.config.mjs`) |
 
 No tests, no typecheck, no formatter. Before committing, run `npm run lint`.
 
@@ -24,6 +24,7 @@ No tests, no typecheck, no formatter. Before committing, run `npm run lint`.
 - `params` and `searchParams` are async — **always `await` them** in page/layout components.
 - `generateStaticParams` returns plain objects (not Promises).
 - `serverExternalPackages: ["sanity"]` in `next.config.mjs` keeps Sanity as an external module on the server.
+- `babel-plugin-react-compiler` in devDependencies — React Compiler is available but not configured in `next.config.mjs`.
 
 ## Path aliases
 
@@ -38,23 +39,23 @@ No tests, no typecheck, no formatter. Before committing, run `npm run lint`.
 ## Sanity CMS
 
 - Studio at `/studio`. Schema + config in `sanity/`.
-- **Two schema files exist** — the active one is `sanity/schemas/index.js` (imported by `sanity.config.js`). The `sanity/schemaTypes/` dir is a subset that can be ignored.
+- **Active schema**: `sanity/schemas/index.js` (imported by `sanity.config.js`). Imports individual types from both `sanity/schemaTypes/` (post, category, author, blockContent, settings) and `sanity/schemas/` (guidePage + objects).
 - Schema types: `post`, `category`, `author`, `blockContent`, `settings`, `guidePage` + object types (`guideSection`, `calloutBox`, `quickReferenceSection`, `infoCard`, `twoColumnTable`, `threeColumnTable`, `bulletList`, `cityTabBlock`).
-- **Queries are in two locations**: `sanity/lib/queries.js` (post, category, settings queries) and `sanity/queries/guidePageQuery.js` (guidePage queries).
-- **Client**: `sanity/lib/client.js` exports `client` and `sanityFetch`. All pages use `client.fetch()` directly with explicit `{ next: { revalidate: N } }` — `sanityFetch` is **not used**.
+- **Queries in two locations**: `sanity/lib/queries.js` (post, category, settings queries) and `sanity/queries/guidePageQuery.js` (guidePage queries).
+- **Client**: `sanity/lib/client.js` — all pages use `client.fetch()` directly with `{ next: { revalidate: N } }`.
+- `sanity/lib/live.js` exports `sanityFetch` and `SanityLive` but **neither is used** anywhere.
 - `sanity/lib/image.js` exports `urlFor()`.
-- `sanity/structure.js` customizes the Studio sidebar.
+- `sanity/structure.js` customises the Studio sidebar.
 - Env vars: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET` (in `.env.local`). `.env*` is gitignored.
-- `lib/sanityClient.js` is an unused duplicate — prefer `sanity/lib/client.js`.
+- `lib/sanityClient.js` is an unused duplicate — always use `sanity/lib/client.js`.
 
 ## Content types at `/blog/[slug]`
 
-The detail route renders **two content types**:
+The detail route renders **two content types** sharing the same URL namespace:
 1. **post** — standard blog post with `PortableText` body.
 2. **guidePage** — structured guide with sections (uses block components from `lib/portableTextComponents.jsx`).
 
-Both share the same URL namespace. `generateStaticParams` fetches slugs from both.
-`revalidate = 60` on blog detail page.
+`generateStaticParams` fetches slugs from both. `revalidate = 60`. `dynamicParams = true`.
 
 ## Routes
 
@@ -67,20 +68,20 @@ Both share the same URL namespace. `generateStaticParams` fetches slugs from bot
 | `/studio/[[...tool]]` | `src/app/studio/[[...tool]]/page.jsx` |
 | `/tools/rent-checker` | `src/app/tools/rent-checker/page.js` |
 | `/about` | `src/app/about/page.js` |
+| `/api/subscribe` | `src/app/api/subscribe/` |
 
 ## Redirects
 
-Defined in `next.config.mjs`. Old article URLs, `/category/*`, `/tag/*`, `/latest-blogs`, `/about-us` all redirect to `/blog` or modern equivalents. Some old category slugs redirect with query params (e.g., `/category/Money-Management` → `/blog?category=tax-and-money`).
+Defined in `next.config.mjs`. Old article URLs, `/category/*`, `/tag/*`, `/latest-blogs`, `/about-us` all redirect. Some old category slugs redirect with query params (e.g., `/category/Money-Management` → `/blog?category=tax-and-money`).
 
 ## Sitemap & Robots
 
 - `src/app/sitemap.js` — static pages + dynamic post/category URLs. `revalidate = 60`.
-- `src/app/robots.js` — disallows `/studio/`, sitemap at `https://www.internationalstudenttips.com.au/sitemap.xml`.
+- `src/app/robots.js` — disallows `/studio/`.
 
 ## Structure notes
 
-- App Router only (no Pages Router).
-- No TypeScript — plain JS.
-- Analytics: Google Analytics (`G-5FSDSPEZC9`) + Microsoft Clarity in root layout (`src/app/layout.js:70-94`).
-- Root layout re-fetches `settingsQuery` for both `generateMetadata` and the layout body.
+- App Router only (no Pages Router). Plain JS (no TypeScript).
+- Root layout (`src/app/layout.js`) re-fetches `settingsQuery` for both `generateMetadata` and the layout body.
+- Analytics: Google Analytics (`G-5FSDSPEZC9`) + Microsoft Clarity injected via `<script>` tags in root layout.
 - Social links (Facebook, Instagram, TikTok) in footer.

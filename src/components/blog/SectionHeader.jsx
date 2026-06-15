@@ -2,7 +2,7 @@ export default function SectionHeader({ number, emoji, title, children }) {
   return (
     <div className="mb-6">
       <div className="mb-4 flex items-center gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#1F5C99] text-sm font-bold text-white md:h-14 md:w-14 md:text-base">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-green)] text-sm font-bold text-white md:h-14 md:w-14 md:text-base">
           {number}
         </span>
         <div className="flex items-center gap-3">

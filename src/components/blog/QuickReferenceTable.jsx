@@ -4,7 +4,7 @@ export default function QuickReferenceTable({ rows }) {
     <div className="my-6 overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="bg-[#2E75B6] text-white">
+          <tr className="bg-[var(--brand-green)] text-white">
             <th className="px-4 py-3 font-semibold">Resource</th>
             <th className="px-4 py-3 font-semibold">Link / Details</th>
           </tr>
@@ -22,7 +22,7 @@ export default function QuickReferenceTable({ rows }) {
                       href={col2}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#1F5C99] underline underline-offset-2 hover:text-[#2E75B6]"
+                      className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
                     >
                       {col2}
                     </a>

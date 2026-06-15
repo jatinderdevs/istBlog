@@ -8,6 +8,7 @@ import {
   settingsQuery,
 } from "../../sanity/lib/queries";
 import { urlFor } from "../../sanity/lib/image";
+import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
 export const revalidate = 60;
 
 function formatDate(dateString) {
@@ -57,6 +58,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <NewsletterBanner />
 
       {/* Topics Pills */}
       <section className="border-b border-gray-100 bg-white">
@@ -216,7 +219,7 @@ export default async function Home() {
           )}
         </section>
 
-        <section className="bg-green-600 my-6 py-10 rounded-2xl">
+        <section className="bg-sky-700 my-6 py-10 rounded-2xl">
           <div className="grid md:grid-cols-2 sm:grid-cols-1 justify-between  items-center gap-5 px-6 py-2">
             <div className="">
               <h1 className="text-2xl/7 font-bold text-white  sm:text-3xl ">

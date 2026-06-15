@@ -4,7 +4,7 @@ export default function AppTable({ apps }) {
     <div className="my-6 overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="bg-[#2E75B6] text-white">
+          <tr className="bg-[var(--brand-green)] text-white">
             <th className="px-4 py-3 font-semibold">App</th>
             <th className="px-4 py-3 font-semibold">What It Does</th>
             <th className="px-4 py-3 font-semibold">Cost</th>

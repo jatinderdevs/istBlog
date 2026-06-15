@@ -21,8 +21,8 @@ export default function CityTabBlock({ tabs }) {
               onClick={() => setActive(i)}
               className={`cursor-pointer rounded-full px-5 py-2 text-sm font-medium transition-colors ${
                 i === active
-                  ? "bg-[#1F5C99] text-white"
-                  : "border border-gray-300 text-gray-600 hover:border-[#1F5C99] hover:text-[#1F5C99]"
+                  ? "bg-[var(--brand-green)] text-white"
+                  : "border border-gray-300 text-gray-600 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
               }`}
             >
               {label}
@@ -36,7 +36,7 @@ export default function CityTabBlock({ tabs }) {
             const text = typeof activity === "string" ? activity : activity.text || activity;
             return (
               <li key={activity._key || i} className="flex items-start gap-3 text-sm text-gray-700">
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#1F5C99]" />
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--brand-green)]" />
                 <span>{text}</span>
               </li>
             );

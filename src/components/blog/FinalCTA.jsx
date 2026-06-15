@@ -2,7 +2,7 @@
 
 export default function FinalCTA() {
   return (
-    <section className="mt-16 bg-gradient-to-br from-[#1F5C99] to-[#2E75B6] px-6 py-16 text-center text-white">
+    <section className="mt-16 bg-gradient-to-br from-[var(--brand-green)] to-[#046a35] px-6 py-16 text-center text-white">
       <div className="mx-auto max-w-xl">
         <h2 className="text-2xl font-bold md:text-3xl">Was this helpful?</h2>
         <p className="mt-2 text-white/80">Share it with a friend who just arrived in Australia.</p>
@@ -50,7 +50,7 @@ export default function FinalCTA() {
             />
             <button
               type="submit"
-              className="cursor-pointer rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#1F5C99] transition-colors hover:bg-white/90"
+              className="cursor-pointer rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--brand-green)] transition-colors hover:bg-white/90"
             >
               Get more guides
             </button>

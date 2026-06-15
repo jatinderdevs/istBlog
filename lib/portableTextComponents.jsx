@@ -23,7 +23,7 @@ export const guidePortableTextComponents = {
       </h4>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="my-6 border-l-4 border-[#1F5C99] bg-[#D6E4F0]/30 py-3 pl-5 italic text-gray-600">
+      <blockquote className="my-6 border-l-4 border-[var(--brand-green)] bg-[var(--brand-green-light)]/50 py-3 pl-5 italic text-gray-600">
         {children}
       </blockquote>
     ),
@@ -53,7 +53,7 @@ export const guidePortableTextComponents = {
           href={href}
           target={value?.blank ? "_blank" : undefined}
           rel={value?.blank ? "noopener noreferrer" : undefined}
-          className="text-[#1F5C99] underline underline-offset-2 hover:text-[#2E75B6]"
+          className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
         >
           {children}
         </a>
@@ -65,7 +65,7 @@ export const guidePortableTextComponents = {
       return (
         <Link
           href={`/blog/${slug}`}
-          className="text-[#1F5C99] underline underline-offset-2 hover:text-[#2E75B6]"
+          className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
         >
           {children}
         </Link>

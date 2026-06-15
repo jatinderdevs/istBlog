@@ -3,10 +3,25 @@ export const guideSection = {
   title: "Guide Section",
   type: "object",
   fields: [
-    { name: "sectionNumber", title: "Section Number", type: "string", description: "e.g. '01', '02'" },
-    { name: "emoji", title: "Emoji", type: "string", description: "Single emoji character" },
+    {
+      name: "sectionNumber",
+      title: "Section Number",
+      type: "string",
+      description: "e.g. '01', '02'",
+    },
+    {
+      name: "emoji",
+      title: "Emoji",
+      type: "string",
+      description: "Single emoji character",
+    },
     { name: "title", title: "Title", type: "string" },
-    { name: "anchorId", title: "Anchor ID", type: "string", description: "Used for TOC jump links, e.g. 'government-hubs'" },
+    {
+      name: "anchorId",
+      title: "Anchor ID",
+      type: "string",
+      description: "Used for TOC jump links, e.g. 'government-hubs'",
+    },
     { name: "body", title: "Body Content", type: "guideBody" },
     {
       name: "components",

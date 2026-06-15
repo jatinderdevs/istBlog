@@ -62,8 +62,8 @@ export default function TableOfContents() {
               href={`#${s.id}`}
               className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 activeId === s.id
-                  ? "bg-[#1F5C99] text-white"
-                  : "border border-gray-300 text-gray-600 hover:border-[#1F5C99] hover:text-[#1F5C99]"
+                  ? "bg-[var(--brand-green)] text-white"
+                  : "border border-gray-300 text-gray-600 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
               }`}
             >
               {s.title}
@@ -73,7 +73,7 @@ export default function TableOfContents() {
       </nav>
 
       {/* Desktop: sticky left sidebar */}
-      <aside className="hidden md:block">
+      <aside className="hidden mt-3 md:block">
         <div className="sticky mt-10 top-24 w-56">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
             On this page
@@ -83,10 +83,10 @@ export default function TableOfContents() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className={`block text-sm leading-snug transition-colors ${
+                className={`block my-3 text-sm leading-snug transition-colors ${
                   activeId === s.id
-                    ? "font-medium text-[#1F5C99]"
-                    : "text-gray-500 hover:text-[#1F5C99]"
+                    ? "font-medium text-[var(--brand-green)]"
+                    : "text-gray-500 hover:text-[var(--brand-green)]"
                 }`}
               >
                 {s.title}

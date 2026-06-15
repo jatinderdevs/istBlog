@@ -1,6 +1,9 @@
 import { client } from "../../../../sanity/lib/client";
 import { postQuery, postsQuery } from "../../../../sanity/lib/queries";
-import { guidePageQuery, guidePageSlugsQuery } from "../../../../sanity/queries/guidePageQuery";
+import {
+  guidePageQuery,
+  guidePageSlugsQuery,
+} from "../../../../sanity/queries/guidePageQuery";
 import { PortableText } from "@portabletext/react";
 import { guidePortableTextComponents } from "../../../../lib/portableTextComponents";
 import Link from "next/link";
@@ -17,7 +20,9 @@ import QuickReferenceTable from "@/components/blog/QuickReferenceTable";
 import AppTable from "@/components/blog/AppTable";
 import BulletListBlock from "@/components/blog/BulletListBlock";
 import CityTabBlock from "@/components/blog/CityTabBlock";
+import NewsletterInline from "@/components/newsletter/NewsletterInline";
 import FinalCTA from "@/components/blog/FinalCTA";
+import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
 
 export const revalidate = 60;
 export const dynamicParams = true;
@@ -46,7 +51,8 @@ export async function generateMetadata({ params }) {
   if (post) {
     return {
       title: post.title,
-      description: post.excerpt || "Read this guide on International Student Tips.",
+      description:
+        post.excerpt || "Read this guide on International Student Tips.",
       alternates: {
         canonical: `https://www.internationalstudenttips.com.au/blog/${post.slug.current}`,
       },
@@ -177,14 +183,36 @@ const portableTextComponents = {
     },
     callout: ({ value }) => {
       const styles = {
-        info: { bg: "bg-blue-50", border: "border-blue-400", text: "text-blue-800", emoji: "ℹ️" },
-        warning: { bg: "bg-yellow-50", border: "border-yellow-400", text: "text-yellow-800", emoji: "⚠️" },
-        success: { bg: "bg-green-50", border: "border-green-400", text: "text-green-800", emoji: "✅" },
-        tip: { bg: "bg-purple-50", border: "border-purple-400", text: "text-purple-800", emoji: "💡" },
+        info: {
+          bg: "bg-blue-50",
+          border: "border-blue-400",
+          text: "text-blue-800",
+          emoji: "ℹ️",
+        },
+        warning: {
+          bg: "bg-yellow-50",
+          border: "border-yellow-400",
+          text: "text-yellow-800",
+          emoji: "⚠️",
+        },
+        success: {
+          bg: "bg-green-50",
+          border: "border-green-400",
+          text: "text-green-800",
+          emoji: "✅",
+        },
+        tip: {
+          bg: "bg-purple-50",
+          border: "border-purple-400",
+          text: "text-purple-800",
+          emoji: "💡",
+        },
       };
       const style = styles[value.type] || styles.info;
       return (
-        <div className={`${style.bg} ${style.border} border-l-4 rounded-r-xl px-5 py-4 my-6`}>
+        <div
+          className={`${style.bg} ${style.border} border-l-4 rounded-r-xl px-5 py-4 my-6`}
+        >
           <p className={`${style.text} text-sm leading-relaxed`}>
             <span className="mr-2">{style.emoji}</span>
             {value.text}
@@ -210,16 +238,24 @@ const portableTextComponents = {
       <p className="text-gray-700 leading-relaxed mb-5 text-lg">{children}</p>
     ),
     h1: ({ children }) => (
-      <h1 className="text-3xl font-medium text-gray-900 mt-10 mb-4">{children}</h1>
+      <h1 className="text-3xl font-medium text-gray-900 mt-10 mb-4">
+        {children}
+      </h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-2xl font-medium text-gray-900 mt-10 mb-4">{children}</h2>
+      <h2 className="text-2xl font-medium text-gray-900 mt-10 mb-4">
+        {children}
+      </h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-xl font-medium text-gray-900 mt-8 mb-3">{children}</h3>
+      <h3 className="text-xl font-medium text-gray-900 mt-8 mb-3">
+        {children}
+      </h3>
     ),
     h4: ({ children }) => (
-      <h4 className="text-lg font-medium text-gray-900 mt-6 mb-2">{children}</h4>
+      <h4 className="text-lg font-medium text-gray-900 mt-6 mb-2">
+        {children}
+      </h4>
     ),
     blockquote: ({ children }) => (
       <blockquote className="border-l-4 border-[var(--brand-green)] pl-5 py-1 my-6 text-gray-600 italic bg-[var(--brand-green-light)] rounded-r-lg">
@@ -229,21 +265,33 @@ const portableTextComponents = {
   },
   list: {
     bullet: ({ children }) => (
-      <ul className="list-disc list-outside ml-6 mb-5 space-y-2 text-gray-700">{children}</ul>
+      <ul className="list-disc list-outside ml-6 mb-5 space-y-2 text-gray-700">
+        {children}
+      </ul>
     ),
     number: ({ children }) => (
-      <ol className="list-decimal list-outside ml-6 mb-5 space-y-2 text-gray-700">{children}</ol>
+      <ol className="list-decimal list-outside ml-6 mb-5 space-y-2 text-gray-700">
+        {children}
+      </ol>
     ),
   },
   listItem: {
-    bullet: ({ children }) => <li className="text-lg leading-relaxed">{children}</li>,
-    number: ({ children }) => <li className="text-lg leading-relaxed">{children}</li>,
+    bullet: ({ children }) => (
+      <li className="text-lg leading-relaxed">{children}</li>
+    ),
+    number: ({ children }) => (
+      <li className="text-lg leading-relaxed">{children}</li>
+    ),
   },
   marks: {
-    strong: ({ children }) => <strong className="font-medium text-gray-900">{children}</strong>,
+    strong: ({ children }) => (
+      <strong className="font-medium text-gray-900">{children}</strong>
+    ),
     em: ({ children }) => <em className="italic">{children}</em>,
     underline: ({ children }) => <span className="underline">{children}</span>,
-    "strike-through": ({ children }) => <span className="line-through">{children}</span>,
+    "strike-through": ({ children }) => (
+      <span className="line-through">{children}</span>
+    ),
     code: ({ children }) => (
       <code className="bg-gray-100 text-[var(--brand-green)] px-1.5 py-0.5 rounded text-sm font-mono">
         {children}
@@ -271,62 +319,72 @@ export default async function Page({ params }) {
 
 function BlogPost({ post }) {
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16">
-      <Link
-        href="/blog"
-        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[var(--brand-green)] transition-colors mb-10"
-      >
-        ← Back to all posts
-      </Link>
-      <div className="mb-10">
-        {post.categories?.[0] && (
-          <span className="inline-block text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-3 py-1 rounded-full mb-4">
-            {post.categories[0]}
-          </span>
-        )}
-        <h1 className="text-4xl font-medium text-gray-900 leading-tight mb-5">{post.title}</h1>
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          {post.author && <span>By {post.author}</span>}
-          {post.publishedAt && (
-            <>
-              <span>·</span>
-              <span>{formatDate(post.publishedAt)}</span>
-            </>
-          )}
-          <span>·</span>
-          <span>5 min read</span>
-        </div>
-      </div>
-      <div className="relative w-full h-72 rounded-2xl overflow-hidden mb-12 bg-[var(--brand-green-light)]">
-        {post.mainImage ? (
-          <Image
-            src={urlFor(post.mainImage).width(1200).height(600).url()}
-            alt={post.title}
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div className="h-full flex items-center justify-center">
-            <span className="text-6xl">📖</span>
-          </div>
-        )}
-      </div>
-      <article>
-        {post.body ? (
-          <PortableText value={post.body} components={portableTextComponents} />
-        ) : (
-          <p className="text-gray-400">No content yet.</p>
-        )}
-      </article>
-      <div className="border-t border-gray-100 mt-16 pt-8">
+    <>
+      <div className="max-w-3xl mx-auto px-6 pt-16">
         <Link
           href="/blog"
-          className="inline-flex items-center gap-2 text-sm border border-[var(--brand-green)] text-[var(--brand-green)] px-5 py-2.5 rounded-lg hover:bg-[var(--brand-green)] hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[var(--brand-green)] transition-colors mb-10"
         >
-          ← Browse more guides
+          ← Back to all posts
         </Link>
+        <div className="mb-10">
+          {post.categories?.[0] && (
+            <span className="inline-block text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-3 py-1 rounded-full mb-4">
+              {post.categories[0]}
+            </span>
+          )}
+          <h1 className="text-4xl font-medium text-gray-900 leading-tight mb-5">
+            {post.title}
+          </h1>
+          <div className="flex items-center gap-4 text-sm text-gray-400">
+            {post.author && <span>By {post.author}</span>}
+            {post.publishedAt && (
+              <>
+                <span>·</span>
+                <span>{formatDate(post.publishedAt)}</span>
+              </>
+            )}
+            <span>·</span>
+            <span>5 min read</span>
+          </div>
+        </div>
+        <div className="relative w-full h-72 rounded-2xl overflow-hidden mb-12 bg-[var(--brand-green-light)]">
+          {post.mainImage ? (
+            <Image
+              src={urlFor(post.mainImage).width(1200).height(600).url()}
+              alt={post.title}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <span className="text-6xl">📖</span>
+            </div>
+          )}
+        </div>
+        <article>
+          {post.body ? (
+            <PortableText
+              value={post.body}
+              components={portableTextComponents}
+            />
+          ) : (
+            <p className="text-gray-400">No content yet.</p>
+          )}
+        </article>
       </div>
-    </div>
+
+      <div className="max-w-3xl mx-auto px-6 ">
+        <div className="border-t border-gray-100 pt-8">
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 text-sm border border-[var(--brand-green)] text-[var(--brand-green)] px-5 py-2.5 rounded-lg hover:bg-[var(--brand-green)] hover:text-white transition-colors"
+          >
+            ← Browse more guides
+          </Link>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -362,7 +420,17 @@ function GuidePage({ guide }) {
 }
 
 function GuideSectionBlock(props) {
-  const { sectionNumber, emoji, title, anchorId, body, components, relatedPostTitle, relatedPostSlug, isEven } = props;
+  const {
+    sectionNumber,
+    emoji,
+    title,
+    anchorId,
+    body,
+    components,
+    relatedPostTitle,
+    relatedPostSlug,
+    isEven,
+  } = props;
   const sectionComponents = components || [];
 
   const sectionComponentMap = {
@@ -382,7 +450,10 @@ function GuideSectionBlock(props) {
       <div className="pl-0 md:pl-18">
         {body && (
           <div className="mb-6">
-            <PortableText value={body} components={guidePortableTextComponents} />
+            <PortableText
+              value={body}
+              components={guidePortableTextComponents}
+            />
           </div>
         )}
         {sectionComponents.map((comp, i) => {
@@ -391,7 +462,10 @@ function GuideSectionBlock(props) {
           return <Comp key={comp._key || i} {...comp} />;
         })}
         {relatedPostSlug && relatedPostTitle && (
-          <InternalLinkCallout href={`/blog/${relatedPostSlug}`} title={relatedPostTitle} />
+          <InternalLinkCallout
+            href={`/blog/${relatedPostSlug}`}
+            title={relatedPostTitle}
+          />
         )}
       </div>
     </section>
@@ -403,15 +477,18 @@ function CalloutBoxBlock(props) {
   return (
     <section className="bg-white px-4 py-12 md:px-8 md:py-16">
       <div className="mx-auto max-w-3xl">
-        <div className="rounded-xl border-l-4 border-[#1F5C99] bg-white p-5 shadow-md">
+        <div className="rounded-xl border-l-4 border-[var(--brand-green)] bg-white p-5 shadow-md">
           {label && (
-            <span className="mb-2 inline-block rounded bg-[#1F5C99]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#1F5C99]">
+            <span className="mb-2 inline-block rounded bg-[var(--brand-green-light)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--brand-green)]">
               {label}
             </span>
           )}
           {content && (
             <div className="text-sm leading-relaxed text-gray-800">
-              <PortableText value={content} components={guidePortableTextComponents} />
+              <PortableText
+                value={content}
+                components={guidePortableTextComponents}
+              />
             </div>
           )}
         </div>
@@ -429,14 +506,28 @@ function QuickReferenceSectionBlock(props) {
       id="quick-reference"
       className="bg-white rounded-2xl px-4 py-12 md:px-8 md:py-16"
     >
-      <SectionHeader number="10" emoji="🔖" title={title || "Quick Reference Links"} />
+      <SectionHeader
+        number="10"
+        emoji="🔖"
+        title={title || "Quick Reference Links"}
+      />
       <div className="pl-0 md:pl-18">
         {ctaText && (
-          <div className="mb-8 flex items-center gap-3 rounded-xl bg-[#D6E4F0] px-5 py-4">
-            <svg className="h-5 w-5 shrink-0 text-[#1F5C99]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          <div className="mb-8 flex items-center gap-3 rounded-xl bg-[var(--brand-green-light)] px-5 py-4">
+            <svg
+              className="h-5 w-5 shrink-0 text-[var(--brand-green)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+              />
             </svg>
-            <p className="text-sm font-medium text-[#1F5C99]">{ctaText}</p>
+            <p className="text-sm font-medium text-[var(--brand-green)]">{ctaText}</p>
           </div>
         )}
         <QuickReferenceTable rows={tableRows} />
@@ -456,7 +547,7 @@ function InfoCardBlock(props) {
             href={linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block text-sm font-medium text-[#1F5C99] underline underline-offset-2"
+            className="mt-2 inline-block text-sm font-medium text-[var(--brand-green)] underline underline-offset-2"
           >
             {linkLabel} →
           </a>
@@ -478,7 +569,9 @@ function TwoColumnTableBlock(props) {
 
 function ThreeColumnTableBlock(props) {
   const { headers, rows } = props;
-  const apps = rows?.map((r) => ({ name: r.col1, description: r.col2, cost: r.col3 })) || [];
+  const apps =
+    rows?.map((r) => ({ name: r.col1, description: r.col2, cost: r.col3 })) ||
+    [];
   return (
     <div className="my-6">
       <AppTable apps={apps} />
@@ -488,7 +581,8 @@ function ThreeColumnTableBlock(props) {
 
 function CityTabBlockBlock(props) {
   const { tabs } = props;
-  const tabData = tabs?.map((t) => ({ label: t.cityName, activities: t.items })) || [];
+  const tabData =
+    tabs?.map((t) => ({ label: t.cityName, activities: t.items })) || [];
   return (
     <div className="my-6">
       <CityTabBlock tabs={tabData} />
