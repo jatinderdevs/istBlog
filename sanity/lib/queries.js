@@ -38,7 +38,7 @@ export const categoriesQuery = groq`
   }
 `;
 export const featuredPostQuery = groq`
-  *[_type == "post" && featured == true][0] {
+  *[_type == "post" && featured == true] | order(publishedAt desc) [0] {
     _id,
     title,
     slug,

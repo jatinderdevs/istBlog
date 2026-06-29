@@ -21,10 +21,10 @@ No tests, no typecheck, no formatter. Before committing, run `npm run lint`.
 
 ## Next.js 16 quirks
 
-- `params` and `searchParams` are async — **always `await` them** in page/layout components.
+- `params`/`searchParams` are async — **always `await` them** in page/layout components.
 - `generateStaticParams` returns plain objects (not Promises).
-- `serverExternalPackages: ["sanity"]` in `next.config.mjs` keeps Sanity as an external module on the server.
-- `babel-plugin-react-compiler` in devDependencies — React Compiler is available but not configured in `next.config.mjs`.
+- `serverExternalPackages: ["sanity"]` in `next.config.mjs`.
+- `babel-plugin-react-compiler` in devDependencies but **not** configured in `next.config.mjs`.
 
 ## Path aliases
 
@@ -38,24 +38,18 @@ No tests, no typecheck, no formatter. Before committing, run `npm run lint`.
 
 ## Sanity CMS
 
-- Studio at `/studio`. Schema + config in `sanity/`.
-- **Active schema**: `sanity/schemas/index.js` (imported by `sanity.config.js`). Imports individual types from both `sanity/schemaTypes/` (post, category, author, blockContent, settings) and `sanity/schemas/` (guidePage + objects).
-- Schema types: `post`, `category`, `author`, `blockContent`, `settings`, `guidePage` + object types (`guideSection`, `calloutBox`, `quickReferenceSection`, `infoCard`, `twoColumnTable`, `threeColumnTable`, `bulletList`, `cityTabBlock`).
-- **Queries in two locations**: `sanity/lib/queries.js` (post, category, settings queries) and `sanity/queries/guidePageQuery.js` (guidePage queries).
+- **Studio** at `/studio`. Schema root: `sanity/schemas/index.js` — merges `sanity/schemaTypes/` (post, category, author, blockContent, settings) and `sanity/schemas/` (guidePage + objects).
 - **Client**: `sanity/lib/client.js` — all pages use `client.fetch()` directly with `{ next: { revalidate: N } }`.
-- `sanity/lib/live.js` exports `sanityFetch` and `SanityLive` but **neither is used** anywhere.
-- `sanity/lib/image.js` exports `urlFor()`.
-- `sanity/structure.js` customises the Studio sidebar.
-- Env vars: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET` (in `.env.local`). `.env*` is gitignored.
-- `lib/sanityClient.js` is an unused duplicate — always use `sanity/lib/client.js`.
+- **Unused** — `sanityFetch` from `sanity/lib/client.js`, and both `sanityFetch`/`SanityLive` from `sanity/lib/live.js`. `lib/sanityClient.js` is an unused duplicate.
+- **Queries**: `sanity/lib/queries.js` (post, category, settings) and `sanity/queries/guidePageQuery.js` (guidePage).
+- **Images**: `sanity/lib/image.js` exports `urlFor()`.
+- **Env vars** (in `.env.local`, gitignored): `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, plus `MAILERLITE_API_KEY`, `MAILERLITE_GROUP_ID` for `/api/subscribe`, and `SANITY_REVALIDATION_SECRET` for the `/api/revalidate` webhook.
 
 ## Content types at `/blog/[slug]`
 
-The detail route renders **two content types** sharing the same URL namespace:
-1. **post** — standard blog post with `PortableText` body.
-2. **guidePage** — structured guide with sections (uses block components from `lib/portableTextComponents.jsx`).
-
-`generateStaticParams` fetches slugs from both. `revalidate = 60`. `dynamicParams = true`.
+Two content types share this URL namespace. `generateStaticParams` fetches slugs from both. `revalidate = 60`. `dynamicParams = true`.
+1. **post** — blog post with `PortableText` body (inline components in page.js).
+2. **guidePage** — structured guide with section blocks (uses `guidePortableTextComponents` from `lib/portableTextComponents.jsx`).
 
 ## Routes
 
@@ -68,11 +62,11 @@ The detail route renders **two content types** sharing the same URL namespace:
 | `/studio/[[...tool]]` | `src/app/studio/[[...tool]]/page.jsx` |
 | `/tools/rent-checker` | `src/app/tools/rent-checker/page.js` |
 | `/about` | `src/app/about/page.js` |
-| `/api/subscribe` | `src/app/api/subscribe/` |
+| `/api/subscribe` | `src/app/api/subscribe/route.js` |
 
 ## Redirects
 
-Defined in `next.config.mjs`. Old article URLs, `/category/*`, `/tag/*`, `/latest-blogs`, `/about-us` all redirect. Some old category slugs redirect with query params (e.g., `/category/Money-Management` → `/blog?category=tax-and-money`).
+Defined in `next.config.mjs`. Old article URLs, `/category/*`, `/tag/*`, `/latest-blogs`, `/about-us` all redirect. Some old category slugs map with query params (e.g., `/category/Money-Management` → `/blog?category=tax-and-money`).
 
 ## Sitemap & Robots
 
@@ -84,4 +78,4 @@ Defined in `next.config.mjs`. Old article URLs, `/category/*`, `/tag/*`, `/lates
 - App Router only (no Pages Router). Plain JS (no TypeScript).
 - Root layout (`src/app/layout.js`) re-fetches `settingsQuery` for both `generateMetadata` and the layout body.
 - Analytics: Google Analytics (`G-5FSDSPEZC9`) + Microsoft Clarity injected via `<script>` tags in root layout.
-- Social links (Facebook, Instagram, TikTok) in footer.
+- No `opencode.json` — agent instructions live only in this file.
