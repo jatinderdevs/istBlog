@@ -10,6 +10,7 @@ export const quickReferenceSection = {
       type: "string",
       description: "e.g. 'Save this guide — you will need it.'",
     },
+
     {
       name: "rows",
       title: "Reference Rows",

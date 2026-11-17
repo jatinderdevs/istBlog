@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { canonicalUrl, jsonLd } from "@/lib/seo";
 
 // ─── City & accommodation data ────────────────────────────────────────────────
 
@@ -365,13 +366,13 @@ export default function RentCheckerPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLd({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            name: "Rent Affordability Calculator for International Students in Australia",
+            name: "Rent Affordability Checker",
             description:
-              "Free tool to check if your rent is affordable on a student income. Compare rents across Sydney, Melbourne, Brisbane, Perth, Adelaide and Canberra.",
-            url: "https://www.internationalstudenttips.com.au/tools/rent-checker",
+              "Check whether your rent is affordable on a student income in Australia, with typical rents across major cities and the 30% guideline explained.",
+            url: canonicalUrl("/tools/rent-checker"),
             applicationCategory: "FinanceApplication",
             operatingSystem: "Any",
             offers: {
@@ -392,12 +393,7 @@ export default function RentCheckerPage() {
         <section className="bg-white border-b border-gray-100">
           <div className="max-w-3xl mx-auto px-6 py-14">
             <div className="flex items-center gap-2 mb-4">
-              <Link
-                href="/tools"
-                className="text-xs text-gray-400 hover:text-[var(--brand-green)] transition-colors"
-              >
-                Tools
-              </Link>
+              <span className="text-xs text-gray-400">Tools</span>
               <span className="text-xs text-gray-300">/</span>
               <span className="text-xs text-gray-400">Rent Checker</span>
             </div>
@@ -523,7 +519,7 @@ export default function RentCheckerPage() {
                 </span>
                 <p>
                   <strong className="text-gray-700 font-medium">
-                    Check your university's housing board.
+                    Check your university&apos;s housing board.
                   </strong>{" "}
                   Most Australian universities have an official housing
                   noticeboard or off-campus housing service. These listings are
@@ -549,10 +545,10 @@ export default function RentCheckerPage() {
                 </span>
                 <p>
                   <strong className="text-gray-700 font-medium">
-                    Understand what's included.
+                    Understand what&apos;s included.
                   </strong>{" "}
-                  Some rentals include water, gas and internet — others don't.
-                  Factor in $80–120/month for utilities if they're not included
+                  Some rentals include water, gas and internet — others don&apos;t.
+                  Factor in $80–120/month for utilities if they&apos;re not included
                   when comparing your true costs.
                 </p>
               </div>
@@ -568,13 +564,13 @@ export default function RentCheckerPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link
-                  href="/blog?category=housing"
+                  href="/blog/category/housing"
                   className="text-sm text-[var(--brand-green)] hover:underline"
                 >
                   All housing guides →
                 </Link>
                 <Link
-                  href="/blog?category=money"
+                  href="/blog/category/tax-and-money"
                   className="text-sm text-[var(--brand-green)] hover:underline"
                 >
                   Money & budgeting →

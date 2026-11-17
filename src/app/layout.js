@@ -5,54 +5,64 @@ import Footer from "@/components/Footer";
 import { client } from "../../sanity/lib/client";
 import { settingsQuery } from "../../sanity/lib/queries";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import {
+  canonicalUrl,
+  DEFAULT_DESCRIPTION,
+  DEFAULT_OG_IMAGE,
+  keywordList,
+  organizationJsonLd,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/seo";
 
 const geist = Geist({ subsets: ["latin"] });
 
+export const viewport = {
+  themeColor: "#048442",
+};
+
 export async function generateMetadata() {
-  <SpeedInsights />;
   const settings = await client.fetch(settingsQuery);
+  const siteTitle = settings?.title?.trim() || SITE_NAME;
+  const description = settings?.description?.trim() || DEFAULT_DESCRIPTION;
 
   return {
-    metadataBase: new URL("https://www.internationalstudenttips.com.au"),
+    metadataBase: new URL(`${SITE_URL}/`),
     alternates: {
-      canonical: "https://www.internationalstudenttips.com.au",
+      canonical: canonicalUrl("/"),
     },
     title: {
-      default:
-        settings?.title || "IST Blogs — International Student Tips Australia",
-      template: "%s — IST Blogs",
+      default: siteTitle,
+      template: `%s | ${SITE_NAME}`,
     },
-    description:
-      settings?.description ||
-      "Practical guides for international students in Australia.",
-    keywords: settings?.keywords || ["international student australia"],
-    authors: [{ name: "IST Blogs" }],
+    description,
+    keywords: keywordList(settings?.keywords),
+    authors: [{ name: SITE_NAME }],
+    applicationName: SITE_NAME,
+    manifest: "/favicon/site.webmanifest",
+    icons: {
+      icon: [
+        { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+        { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      ],
+      apple: [
+        { url: "/favicon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      ],
+    },
     openGraph: {
       type: "website",
       locale: "en_AU",
-      url: "https://www.internationalstudenttips.com.au",
-      siteName: settings?.title || "International Student Tips",
-      title:
-        settings?.title || "IST Blogs — International Student Tips Australia",
-      description:
-        settings?.description ||
-        "Practical guides for international students in Australia.",
-      images: [
-        {
-          url: "/logo.svg",
-          width: 415,
-          height: 175,
-          alt: "International Student Tips",
-        },
-      ],
+      url: canonicalUrl("/"),
+      siteName: SITE_NAME,
+      title: siteTitle,
+      description,
+      images: [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
-      title:
-        settings?.title || "IST Blogs — International Student Tips Australia",
-      description:
-        settings?.description ||
-        "Practical guides for international students in Australia.",
+      title: siteTitle,
+      description,
+      images: [DEFAULT_OG_IMAGE],
     },
     robots: {
       index: true,
@@ -67,6 +77,10 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: organizationJsonLd() }}
+        />
         <script
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-5FSDSPEZC9"
@@ -97,6 +111,7 @@ export default async function RootLayout({ children }) {
         <Navbar />
         <main>{children}</main>
         <Footer settings={settings} />
+        <SpeedInsights />
       </body>
     </html>
   );

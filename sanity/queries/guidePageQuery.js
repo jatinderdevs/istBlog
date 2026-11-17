@@ -32,6 +32,8 @@ export const guidePageQuery = groq`
 
 export const guidePageSlugsQuery = groq`
   *[_type == "guidePage" && defined(slug.current)] {
+    _updatedAt,
+    publishedAt,
     "slug": slug.current
   }
 `;

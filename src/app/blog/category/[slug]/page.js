@@ -8,6 +8,12 @@ import {
   categoryBySlugQuery,
 } from "../../../../../sanity/lib/queries";
 import { urlFor } from "../../../../../sanity/lib/image";
+import {
+  breadcrumbJsonLd,
+  canonicalUrl,
+  DEFAULT_OG_IMAGE,
+} from "@/lib/seo";
+
 export const revalidate = 60;
 
 function formatDate(dateString) {
@@ -29,18 +35,30 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const category = await client.fetch(categoryBySlugQuery, { slug });
 
-  if (!category) return {};
+  if (!category) return { robots: { index: false, follow: false } };
+
+  const url = canonicalUrl(`/blog/category/${slug}`);
+  const title = `${category.title} Guides`;
+  const description =
+    category.description?.trim() ||
+    `${category.title} guides for international students in Australia.`;
 
   return {
-    title: `${category.title} Guides`,
-    description:
-      category.description ||
-      `Browse all ${category.title} guides for international students in Australia.`,
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
-      title: `${category.title} — IST Blogs`,
-      description:
-        category.description ||
-        `Browse all ${category.title} guides for international students in Australia.`,
+      title,
+      description,
+      url,
+      type: "website",
+      images: [DEFAULT_OG_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [DEFAULT_OG_IMAGE],
     },
   };
 }
@@ -57,8 +75,22 @@ export default async function CategoryPage({ params }) {
   if (!category) notFound();
 
   return (
-    <div>
-      {/* Category Header */}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: breadcrumbJsonLd([
+            { name: "Home", url: canonicalUrl("/") },
+            { name: "Blog", url: canonicalUrl("/blog") },
+            {
+              name: category.title,
+              url: canonicalUrl(`/blog/category/${slug}`),
+            },
+          ]),
+        }}
+      />
+      <div>
+        {/* Category Header */}
       <section className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-16">
           <Link
@@ -170,7 +202,8 @@ export default async function CategoryPage({ params }) {
             ))}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

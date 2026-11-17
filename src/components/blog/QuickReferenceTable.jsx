@@ -17,14 +17,14 @@ export default function QuickReferenceTable({ rows }) {
               <tr key={row._key || i} className={i % 2 === 0 ? "bg-[#F5F7FA]" : "bg-white"}>
                 <td className="px-4 py-3 font-medium text-gray-900">{col1}</td>
                 <td className="px-4 py-3 text-gray-600">
-                  {col2?.startsWith("http") ? (
+                  {typeof col2 === "string" && /^https?:\/\//i.test(col2) ? (
                     <a
                       href={col2}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
                     >
-                      {col2}
+                      {col1 || col2}
                     </a>
                   ) : (
                     col2

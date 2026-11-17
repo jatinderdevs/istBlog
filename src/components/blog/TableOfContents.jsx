@@ -2,20 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 
-const SECTIONS = [
-  { id: "government-hubs", title: "Government Hubs" },
-  { id: "social-cultural-programs", title: "Social & Cultural Programs" },
-  { id: "free-mental-health", title: "Free Mental Health Support" },
-  { id: "free-legal-help", title: "Free Legal Help" },
-  { id: "career-programs", title: "Career Programs" },
-  { id: "free-things-to-do", title: "Free Things To Do" },
-  { id: "discounts-cards", title: "Discounts & Cards" },
-  { id: "essential-apps", title: "Essential Apps" },
-  { id: "australian-culture-tips", title: "Australian Culture Tips" },
-  { id: "quick-reference", title: "Quick Reference Links" },
-];
-
-export default function TableOfContents() {
+export default function TableOfContents({ sections = [] }) {
   const [activeId, setActiveId] = useState("");
   const tocRef = useRef(null);
 
@@ -32,7 +19,7 @@ export default function TableOfContents() {
     );
 
     const elements = [];
-    for (const section of SECTIONS) {
+    for (const section of sections) {
       const el = document.getElementById(section.id);
       if (el) {
         observer.observe(el);
@@ -45,7 +32,7 @@ export default function TableOfContents() {
         observer.unobserve(el);
       }
     };
-  }, []);
+  }, [sections]);
 
   return (
     <>
@@ -56,7 +43,7 @@ export default function TableOfContents() {
           className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <a
               key={s.id}
               href={`#${s.id}`}
@@ -79,7 +66,7 @@ export default function TableOfContents() {
             On this page
           </p>
           <nav className="space-y-1 border-l-2 border-gray-200 pl-4">
-            {SECTIONS.map((s) => (
+            {sections.map((s) => (
               <a
                 key={s.id}
                 href={`#${s.id}`}

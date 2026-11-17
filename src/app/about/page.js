@@ -1,11 +1,25 @@
 import Link from "next/link";
+import { canonicalUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
+
+const description =
+  "Learn about International Student Tips and our practical guides for international students living and studying in Australia.";
 
 export const metadata = {
-  title: "About — IST Blogs Australia",
-  description:
-    "Learn about International Student Tips — helping international students thrive in Australia.",
+  title: "About Us",
+  description,
   alternates: {
-    canonical: "https://www.internationalstudenttips.com.au/about",
+    canonical: canonicalUrl("/about"),
+  },
+  openGraph: {
+    title: "About International Student Tips",
+    description,
+    url: canonicalUrl("/about"),
+    type: "website",
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

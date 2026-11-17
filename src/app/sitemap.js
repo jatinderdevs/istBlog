@@ -1,59 +1,82 @@
 import { client } from "../../sanity/lib/client";
 import { postsQuery, categoriesQuery } from "../../sanity/lib/queries";
-
-const BASE_URL = "https://www.internationalstudenttips.com.au";
+import { guidePageSlugsQuery } from "../../sanity/queries/guidePageQuery";
+import { canonicalUrl } from "@/lib/seo";
 
 export const revalidate = 60;
 
+function withLastModified(entry, document) {
+  const modified = document?._updatedAt || document?.publishedAt;
+  if (!modified) return entry;
+  return { ...entry, lastModified: new Date(modified).toISOString() };
+}
+
 export default async function sitemap() {
-  const [posts, categories] = await Promise.all([
+  const [posts, categories, guides] = await Promise.all([
     client.fetch(postsQuery, {}, { next: { revalidate: 60 } }),
     client.fetch(categoriesQuery, {}, { next: { revalidate: 60 } }),
+    client.fetch(guidePageSlugsQuery, {}, { next: { revalidate: 60 } }),
   ]);
 
-  const postUrls = posts.map((post) => ({
-    url: `${BASE_URL}/blog/${post.slug.current}`,
-    lastModified: post.publishedAt
-      ? new Date(post.publishedAt).toISOString()
-      : new Date().toISOString(),
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
+  const postUrls = posts.map((post) =>
+    withLastModified(
+      {
+        url: canonicalUrl(`/blog/${post.slug.current}`),
+        changeFrequency: "monthly",
+        priority: 0.8,
+      },
+      post,
+    ),
+  );
 
-  const categoryUrls = categories.map((cat) => ({
-    url: `${BASE_URL}/blog/category/${cat.slug}`,
-    lastModified: new Date().toISOString(),
-    changeFrequency: "weekly",
-    priority: 0.7,
-  }));
+  const guideUrls = guides.map((guide) =>
+    withLastModified(
+      {
+        url: canonicalUrl(`/blog/${guide.slug}`),
+        changeFrequency: "monthly",
+        priority: 0.8,
+      },
+      guide,
+    ),
+  );
+
+  const categoryUrls = categories.map((category) =>
+    withLastModified(
+      {
+        url: canonicalUrl(`/blog/category/${category.slug}`),
+        changeFrequency: "weekly",
+        priority: 0.7,
+      },
+      category,
+    ),
+  );
+
+  const articleUrls = [...postUrls, ...guideUrls].filter(
+    (entry, index, all) => all.findIndex((item) => item.url === entry.url) === index,
+  );
 
   return [
     {
-      url: BASE_URL,
-      lastModified: new Date().toISOString(),
+      url: canonicalUrl("/"),
       changeFrequency: "daily",
       priority: 1,
     },
     {
-      url: `${BASE_URL}/blog`,
-      lastModified: new Date().toISOString(),
+      url: canonicalUrl("/blog"),
       changeFrequency: "daily",
       priority: 0.9,
     },
     {
-      url: `${BASE_URL}/about`,
-      lastModified: new Date().toISOString(),
+      url: canonicalUrl("/about"),
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: `${BASE_URL}/tools/rent-checker`,
-      lastModified: new Date().toISOString(),
+      url: canonicalUrl("/tools/rent-checker"),
       changeFrequency: "monthly",
       priority: 0.5,
     },
-
     ...categoryUrls,
-    ...postUrls,
+    ...articleUrls,
   ];
 }

@@ -3,7 +3,7 @@ export default function robots() {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "/studio/",
+      disallow: ["/studio", "/studio/"],
     },
     sitemap: "https://www.internationalstudenttips.com.au/sitemap.xml",
   };

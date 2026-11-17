@@ -23,6 +23,17 @@ import CityTabBlock from "@/components/blog/CityTabBlock";
 import NewsletterInline from "@/components/newsletter/NewsletterInline";
 import FinalCTA from "@/components/blog/FinalCTA";
 import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
+import {
+  articleJsonLd,
+  breadcrumbJsonLd,
+  canonicalUrl,
+  DEFAULT_DESCRIPTION,
+  DEFAULT_OG_IMAGE,
+  descriptionFrom,
+  keywordList,
+  portableTextToText,
+  SITE_NAME,
+} from "@/lib/seo";
 
 export const revalidate = 60;
 export const dynamicParams = true;
@@ -46,54 +57,81 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
+  const canonical = canonicalUrl(`/blog/${slug}`);
 
   const post = await client.fetch(postQuery, { slug });
   if (post) {
+    const title = post.title?.trim() || SITE_NAME;
+    const description = descriptionFrom(post.excerpt, DEFAULT_DESCRIPTION);
+    const images = post.mainImage
+      ? [
+          {
+            url: urlFor(post.mainImage).width(1200).height(630).url(),
+            width: 1200,
+            height: 630,
+            alt: post.mainImage.alt || title,
+          },
+        ]
+      : [DEFAULT_OG_IMAGE];
+
     return {
-      title: post.title,
-      description:
-        post.excerpt || "Read this guide on International Student Tips.",
+      title,
+      description,
       alternates: {
-        canonical: `https://www.internationalstudenttips.com.au/blog/${post.slug.current}`,
+        canonical,
       },
       openGraph: {
-        title: post.title,
-        description: post.excerpt || "",
+        title,
+        description,
         type: "article",
         publishedTime: post.publishedAt,
-        url: `https://www.internationalstudenttips.com.au/blog/${post.slug.current}`,
-        images: post.mainImage
-          ? [{ url: urlFor(post.mainImage).width(1200).height(630).url() }]
-          : [],
+        url: canonical,
+        images,
       },
       twitter: {
         card: "summary_large_image",
-        title: post.title,
-        description: post.excerpt || "",
+        title,
+        description,
+        images,
       },
     };
   }
+
 
   const guide = await client.fetch(guidePageQuery, { slug });
   if (guide) {
+    const title = guide.seoTitle?.trim() || guide.title?.trim() || SITE_NAME;
+    const description = descriptionFrom(
+      guideDescription(guide),
+      DEFAULT_DESCRIPTION,
+    );
+    const keywords = keywordList(guide.seoKeywords);
+
     return {
-      title: guide.seoTitle || guide.title,
-      description: guide.seoDescription || "",
-      keywords: guide.seoKeywords || "",
+      title,
+      description,
+      ...(keywords.length ? { keywords } : {}),
       alternates: {
-        canonical: `https://www.internationalstudenttips.com.au/blog/${guide.slug}`,
+        canonical,
       },
       openGraph: {
-        title: guide.seoTitle || guide.title,
-        description: guide.seoDescription || "",
+        title,
+        description,
         type: "article",
         publishedTime: guide.publishedAt,
-        url: `https://www.internationalstudenttips.com.au/blog/${guide.slug}`,
+        url: canonical,
+        images: [DEFAULT_OG_IMAGE],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [DEFAULT_OG_IMAGE],
       },
     };
   }
 
-  return {};
+  return { robots: { index: false, follow: false } };
 }
 
 function formatDate(dateString) {
@@ -104,13 +142,26 @@ function formatDate(dateString) {
   });
 }
 
+function guideDescription(guide) {
+  const seoDescription = guide.seoDescription?.trim();
+  if (seoDescription && seoDescription.length <= 160) return seoDescription;
+  return (
+    guide.subtitle?.trim() ||
+    seoDescription ||
+    portableTextToText(guide.sections?.[0]?.body)
+  );
+}
+
 const AnchorTag = ({ value, children }) => {
-  const href = value && value.href ? value.href : "#";
+  const href = value?.href;
+  if (!href) return <span>{children}</span>;
+
+  const newTab = value?.blank === true || /^https?:\/\//i.test(href);
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={newTab ? "_blank" : undefined}
+      rel={newTab ? "noopener noreferrer" : undefined}
       className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
     >
       {children}
@@ -318,8 +369,39 @@ export default async function Page({ params }) {
 }
 
 function BlogPost({ post }) {
+  const canonical = canonicalUrl(`/blog/${post.slug.current}`);
+  const title = post.title?.trim() || SITE_NAME;
+  const description = descriptionFrom(post.excerpt, DEFAULT_DESCRIPTION);
+  const image = post.mainImage
+    ? urlFor(post.mainImage).width(1200).height(630).url()
+    : DEFAULT_OG_IMAGE.url;
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: articleJsonLd({
+            type: "BlogPosting",
+            title,
+            description,
+            url: canonical,
+            datePublished: post.publishedAt,
+            image,
+            author: post.author,
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: breadcrumbJsonLd([
+            { name: "Home", url: canonicalUrl("/") },
+            { name: "Blog", url: canonicalUrl("/blog") },
+            { name: title, url: canonical },
+          ]),
+        }}
+      />
       <div className="max-w-3xl mx-auto px-6 pt-16">
         <Link
           href="/blog"
@@ -389,17 +471,50 @@ function BlogPost({ post }) {
 }
 
 function GuidePage({ guide }) {
+  const canonical = canonicalUrl(`/blog/${guide.slug}`);
+  const title = guide.seoTitle?.trim() || guide.title?.trim() || SITE_NAME;
+  const description = descriptionFrom(
+    guideDescription(guide),
+    DEFAULT_DESCRIPTION,
+  );
+  const tocSections = (guide.sections || [])
+    .filter((section) => section.anchorId || section._type === "quickReferenceSection")
+    .map((section) => ({
+      id: section.anchorId || "quick-reference",
+      title: section.title?.trim() || "Quick Reference Links",
+    }));
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: articleJsonLd({
+            title,
+            description,
+            url: canonical,
+            datePublished: guide.publishedAt,
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: breadcrumbJsonLd([
+            { name: "Home", url: canonicalUrl("/") },
+            { name: "Blog", url: canonicalUrl("/blog") },
+            { name: title, url: canonical },
+          ]),
+        }}
+      />
       <HeroBanner
         title={guide.title}
         subtitle={guide.subtitle}
         category={guide.category}
         readTime={guide.readTime}
-        downloadLabel={guide.showDownloadPDF !== false ? "Download PDF" : null}
       />
       <div className="mx-auto max-w-6xl px-4 md:flex md:gap-8 md:px-6">
-        <TableOfContents />
+        <TableOfContents sections={tocSections} />
         <article className="min-w-0 flex-1 md:max-w-3xl">
           {guide.sections?.map((section, idx) => {
             const Component = sectionComponentMap[section._type];

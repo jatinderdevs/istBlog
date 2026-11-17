@@ -14,7 +14,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/">
             <Image
-              src="/logo.svg"
+              src="/logo.png"
               alt="IST Blogs"
               width={140}
               height={60}

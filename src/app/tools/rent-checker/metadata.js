@@ -1,13 +1,12 @@
-// app/tools/rent-checker/metadata.js
-// Next.js requires metadata exports to come from a Server Component.
-// Because page.js uses "use client", we export metadata from here
-// and re-export it from a thin layout.js wrapper at the same route level.
-// See: https://nextjs.org/docs/app/api-reference/functions/generate-metadata
+import { canonicalUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
+
+const title = "Rent Affordability Checker";
+const description =
+  "Check whether your rent is affordable on a student income in Australia, with typical rents across major cities and the 30% guideline explained.";
 
 export const metadata = {
-  title: "Rent Affordability Calculator for International Students in Australia",
-  description:
-    "Free tool to check if your rent is affordable on a student visa income. Compare typical rents across Sydney, Melbourne, Brisbane, Perth, Adelaide and Canberra — with the 30% guideline explained.",
+  title,
+  description,
   keywords: [
     "rent affordability calculator australia",
     "international student rent australia",
@@ -18,21 +17,19 @@ export const metadata = {
     "share house cost australia student",
   ],
   openGraph: {
-    title:
-      "Rent Affordability Calculator for International Students in Australia",
-    description:
-      "Enter your weekly income and rent to see if your housing costs are sustainable — with real rental ranges for every major Australian city.",
-    url: "https://www.internationalstudenttips.com.au/tools/rent-checker",
+    title,
+    description,
+    url: canonicalUrl("/tools/rent-checker"),
     type: "website",
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rent Affordability Calculator — International Student Tips",
-    description:
-      "Free tool: is your rent affordable on a student income in Australia?",
+    title,
+    description,
+    images: [DEFAULT_OG_IMAGE],
   },
   alternates: {
-    canonical:
-      "https://www.internationalstudenttips.com.au/tools/rent-checker",
+    canonical: canonicalUrl("/tools/rent-checker"),
   },
 };

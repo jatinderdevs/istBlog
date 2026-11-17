@@ -2,13 +2,29 @@ import Link from "next/link";
 import { client } from "../../../sanity/lib/client";
 import { postsQuery, categoriesQuery } from "../../../sanity/lib/queries";
 import BlogPostGrid from "@/components/blog/BlogPostGrid";
+import { canonicalUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
+
 export const revalidate = 60;
 
+const description =
+  "Guides and tips for international students in Australia, covering visas, work rights, housing, banking and student life.";
+
 export const metadata = {
-  title: "Blog — IST Blogs Australia",
-  description: "All guides and tips for international students in Australia.",
+  title: "Student Guides & Tips",
+  description,
   alternates: {
-    canonical: "https://www.internationalstudenttips.com.au/blog",
+    canonical: canonicalUrl("/blog"),
+  },
+  openGraph: {
+    title: "Student Guides & Tips",
+    description,
+    url: canonicalUrl("/blog"),
+    type: "website",
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

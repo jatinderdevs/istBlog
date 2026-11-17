@@ -1,4 +1,4 @@
-export default function HeroBanner({ title, subtitle, category, readTime, downloadLabel }) {
+export default function HeroBanner({ title, subtitle, category, readTime }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[var(--brand-green)] to-[#046a35] px-6 py-20 md:py-28">
       <div className="absolute inset-0">
@@ -29,16 +29,6 @@ export default function HeroBanner({ title, subtitle, category, readTime, downlo
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/80 md:text-lg">
             {subtitle}
           </p>
-        )}
-        {downloadLabel && (
-          <div className="mt-8 flex flex-wrap gap-4">
-            <button className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-green)] transition-all hover:bg-white/90 hover:shadow-lg">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              {downloadLabel}
-            </button>
-          </div>
         )}
       </div>
     </section>

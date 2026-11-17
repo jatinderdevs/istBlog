@@ -1,6 +1,13 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { canonicalUrl } from "@/lib/seo";
+
 export default function FinalCTA() {
+  const pathname = usePathname();
+  const shareUrl = canonicalUrl(pathname || "/");
+  const shareText = `Check out this guide for international students in Australia: ${shareUrl}`;
+
   return (
     <section className="mt-16 bg-gradient-to-br from-[var(--brand-green)] to-[#046a35] px-6 py-16 text-center text-white">
       <div className="mx-auto max-w-xl">
@@ -9,7 +16,7 @@ export default function FinalCTA() {
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <a
-            href={`https://wa.me/?text=${encodeURIComponent("Check out this guide for international students in Australia!")}`}
+            href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex cursor-pointer items-center gap-2 rounded-lg border-2 border-white/60 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-white hover:bg-white/10"
@@ -18,7 +25,7 @@ export default function FinalCTA() {
             WhatsApp
           </a>
           <a
-            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://internationalstudenttips.com.au/blog/international-student-guide-explore-australia")}`}
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex cursor-pointer items-center gap-2 rounded-lg border-2 border-white/60 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-white hover:bg-white/10"
@@ -27,7 +34,7 @@ export default function FinalCTA() {
             Facebook
           </a>
           <button
-            onClick={() => { navigator.clipboard.writeText("https://internationalstudenttips.com.au/blog/international-student-guide-explore-australia"); }}
+            onClick={() => { navigator.clipboard.writeText(shareUrl); }}
             className="inline-flex cursor-pointer items-center gap-2 rounded-lg border-2 border-white/60 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-white hover:bg-white/10"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -117,7 +117,7 @@ export default function Footer({ settings }) {
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div>
-              <Image src="/logo.svg" alt="IST Blogs" width={120} height={52} />
+              <Image src="/logo.png" alt="IST Blogs" width={120} height={52} />
               <p className="text-sm text-gray-500 mt-3 max-w-xs">
                 {settings?.footerTagline ||
                   "Helping international students thrive in Australia with practical, honest guides."}
@@ -125,21 +125,34 @@ export default function Footer({ settings }) {
               <div className="grid py-3 grid-cols-3 gap-1">
                 <a
                   target="_blank"
+                  rel="noopener noreferrer"
                   href="https://www.facebook.com/profile.php?id=61572900125280"
                 >
-                  <img src="/fb.png" alt="Facebook" />
+                  <Image src="/fb.png" alt="Facebook" width={24} height={24} />
                 </a>
                 <a
                   target="_blank"
+                  rel="noopener noreferrer"
                   href="https://www.instagram.com/internationalstudenttips/"
                 >
-                  <img src="/insta.png" alt="Instagram" />
+                  <Image
+                    src="/insta.png"
+                    alt="Instagram"
+                    width={24}
+                    height={24}
+                  />
                 </a>
                 <a
                   target="_blank"
+                  rel="noopener noreferrer"
                   href="https://www.tiktok.com/@internationalstudenttips"
                 >
-                  <img src="/tik-tok.png" alt="TikTok" />
+                  <Image
+                    src="/tik-tok.png"
+                    alt="TikTok"
+                    width={24}
+                    height={24}
+                  />
                 </a>
               </div>
             </div>
@@ -150,25 +163,25 @@ export default function Footer({ settings }) {
                 </h4>
                 <div className="flex flex-col gap-2">
                   <Link
-                    href="/blog?category=visa-and-immigration"
+                    href="/blog/category/visa-and-immigration"
                     className="text-sm text-gray-500 hover:text-[#048442]"
                   >
                     Visa & Work
                   </Link>
                   <Link
-                    href="/blog?category=housing"
+                    href="/blog/category/housing"
                     className="text-sm text-gray-500 hover:text-[#048442]"
                   >
                     Housing
                   </Link>
                   <Link
-                    href="/blog?category=banking"
+                    href="/blog/category/banking"
                     className="text-sm text-gray-500 hover:text-[#048442]"
                   >
                     Banking
                   </Link>
                   <Link
-                    href="/blog?category=tax-and-money"
+                    href="/blog/category/tax-and-money"
                     className="text-sm text-gray-500 hover:text-[#048442]"
                   >
                     Tax & Money

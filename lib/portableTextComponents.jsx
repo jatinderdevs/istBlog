@@ -47,12 +47,15 @@ export const guidePortableTextComponents = {
     em: ({ children }) => <em className="italic">{children}</em>,
     underline: ({ children }) => <span className="underline">{children}</span>,
     link: ({ value, children }) => {
-      const href = value?.href || "#";
+      const href = value?.href;
+      if (!href) return <span>{children}</span>;
+
+      const newTab = value?.blank === true || /^https?:\/\//i.test(href);
       return (
         <a
           href={href}
-          target={value?.blank ? "_blank" : undefined}
-          rel={value?.blank ? "noopener noreferrer" : undefined}
+          target={newTab ? "_blank" : undefined}
+          rel={newTab ? "noopener noreferrer" : undefined}
           className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
         >
           {children}

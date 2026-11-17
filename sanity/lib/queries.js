@@ -3,6 +3,7 @@ import { groq } from "next-sanity";
 export const postsQuery = groq`
   *[_type == "post"] | order(publishedAt desc) {
     _id,
+    _updatedAt,
     title,
     slug,
     publishedAt,
@@ -32,6 +33,7 @@ export const postQuery = groq`
 export const categoriesQuery = groq`
   *[_type == "category"] | order(title asc) {
     _id,
+    _updatedAt,
     title,
     "slug": slug.current,
     description,

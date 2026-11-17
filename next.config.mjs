@@ -62,17 +62,20 @@ const nextConfig = {
       },
       {
         source: "/category/Money-Management",
-        destination: "/blog?category=tax-and-money",
+          destination: "/blog/category/tax-and-money",
+
         permanent: true,
       },
       {
         source: "/category/Work-in-Australia",
-        destination: "/blog?category=work-rights",
+          destination: "/blog/category/work-rights",
+
         permanent: true,
       },
       {
         source: "/category/Student-Visa",
-        destination: "/blog?category=visa-and-immigration",
+          destination: "/blog/category/visa-and-immigration",
+
         permanent: true,
       },
       // Catch-all for any other /category/* pages
