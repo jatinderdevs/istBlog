@@ -1,0 +1,1102 @@
+diff --git a/src/app/about/page.js b/src/app/about/page.js
+index 8263fcb..53f5bbc 100644
+--- a/src/app/about/page.js
++++ b/src/app/about/page.js
+@@ -5,6 +5,7 @@ import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
+ import {
+   breadcrumbJsonLd,
+   canonicalUrl,
++  CONTACT_EMAIL,
+   DEFAULT_OG_IMAGE,
+   jsonLd,
+   SITE_NAME,
+@@ -26,8 +27,6 @@ const AUTHOR = {
+   ],
+ };
+ 
+-// Add a public contact address here to show it on the page, e.g. "hello@internationalstudenttips.com.au"
+-const CONTACT_EMAIL = null;
+ 
+ const SOCIALS = [
+   {
+@@ -387,14 +386,18 @@ export default async function AboutPage() {
+             and update next.
+           </p>
+           <div className="flex flex-wrap items-center gap-3">
+-            {CONTACT_EMAIL && (
+-              <a
+-                href={`mailto:${CONTACT_EMAIL}`}
+-                className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
+-              >
+-                Email us
+-              </a>
+-            )}
++            <Link
++              href="/contact"
++              className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
++            >
++              Contact us
++            </Link>
++            <a
++              href={`mailto:${CONTACT_EMAIL}`}
++              className="rounded-lg border border-gray-200 px-5 py-3 text-sm text-gray-600 transition-colors hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
++            >
++              {CONTACT_EMAIL}
++            </a>
+             {SOCIALS.map((social) => (
+               <a
+                 key={social.label}
+diff --git a/src/app/contact/page.js b/src/app/contact/page.js
+new file mode 100644
+index 0000000..6902902
+--- /dev/null
++++ b/src/app/contact/page.js
+@@ -0,0 +1,282 @@
++import Link from "next/link";
++import CopyEmailButton from "@/components/CopyEmailButton";
++import {
++  breadcrumbJsonLd,
++  canonicalUrl,
++  CONTACT_EMAIL,
++  DEFAULT_OG_IMAGE,
++  jsonLd,
++  SITE_NAME,
++  SITE_URL,
++} from "@/lib/seo";
++
++const description =
++  "Contact International Student Tips with questions about our guides, corrections, topic suggestions or collaboration. Email hello@internationalstudenttips.com.au.";
++
++export const metadata = {
++  title: "Contact Us",
++  description,
++  alternates: {
++    canonical: canonicalUrl("/contact"),
++  },
++  openGraph: {
++    title: "Contact International Student Tips",
++    description,
++    url: canonicalUrl("/contact"),
++    type: "website",
++    images: [DEFAULT_OG_IMAGE],
++  },
++  twitter: {
++    card: "summary_large_image",
++    title: "Contact International Student Tips",
++    description,
++    images: [DEFAULT_OG_IMAGE],
++  },
++};
++
++function mailto(subject) {
++  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;
++}
++
++const REASONS = [
++  {
++    title: "Questions about our content",
++    text: "Not sure what a guide means, or can't find something you expected? Ask and we'll point you in the right direction.",
++    subject: "Question about your content",
++  },
++  {
++    title: "Corrections & updates",
++    text: "Spotted something out of date or incorrect? Send us the page and, if you can, a link to the official source. Accuracy matters most on visa, tax and work rights.",
++    subject: "Correction or update",
++  },
++  {
++    title: "Topic suggestions",
++    text: "Tell us what you are struggling to find clear answers on. Student questions help us decide what to write and update next.",
++    subject: "Topic suggestion",
++  },
++  {
++    title: "Collaboration & partnerships",
++    text: "Education providers, student organisations and service providers are welcome to get in touch about working together.",
++    subject: "Collaboration enquiry",
++  },
++];
++
++const FAQS = [
++  {
++    q: "Can you give me advice about my own visa?",
++    a: "We can't. Our guides are general information, and we are not registered migration agents. For advice about your situation, speak to a registered migration agent or contact the Department of Home Affairs.",
++  },
++  {
++    q: "How do I report a mistake in a guide?",
++    a: "Email us with the page address and what you think is wrong. A link to the official source helps us check and fix it faster.",
++  },
++  {
++    q: "Can I write a guest post or share my story?",
++    a: "Possibly. Email us a short outline of what you would like to cover and why it would help other international students.",
++  },
++];
++
++export default function ContactPage() {
++  const contactSchema = jsonLd({
++    "@context": "https://schema.org",
++    "@type": "ContactPage",
++    name: "Contact International Student Tips",
++    url: canonicalUrl("/contact"),
++    description,
++    inLanguage: "en-AU",
++    mainEntity: {
++      "@type": "Organization",
++      name: SITE_NAME,
++      url: SITE_URL,
++      email: CONTACT_EMAIL,
++      contactPoint: {
++        "@type": "ContactPoint",
++        contactType: "customer support",
++        email: CONTACT_EMAIL,
++        areaServed: "AU",
++        availableLanguage: "English",
++      },
++    },
++  });
++
++  return (
++    <>
++      <script
++        type="application/ld+json"
++        dangerouslySetInnerHTML={{ __html: contactSchema }}
++      />
++      <script
++        type="application/ld+json"
++        dangerouslySetInnerHTML={{
++          __html: breadcrumbJsonLd([
++            { name: "Home", url: canonicalUrl("/") },
++            { name: "Contact", url: canonicalUrl("/contact") },
++          ]),
++        }}
++      />
++
++      {/* Hero */}
++      <section className="border-b border-gray-100 bg-white">
++        <div className="mx-auto max-w-3xl px-6 py-16">
++          <span className="text-xs font-medium uppercase tracking-widest text-[var(--brand-green)]">
++            Contact
++          </span>
++          <h1 className="mt-2 mb-5 text-4xl font-medium leading-tight text-gray-900 md:text-5xl">
++            Get in touch
++          </h1>
++          <p className="text-lg leading-relaxed text-gray-500">
++            Have a question about our content, spotted something that needs
++            fixing, or want to work with us? Send us an email. We read every
++            message and use your feedback to improve the site.
++          </p>
++        </div>
++      </section>
++
++      <div className="mx-auto max-w-3xl px-6">
++        {/* Email card */}
++        <section className="py-12">
++          <div className="rounded-3xl border border-[var(--brand-green)]/20 bg-[var(--brand-green-light)] p-6 md:p-8">
++            <p className="text-xs font-medium uppercase tracking-widest text-[var(--brand-green)]">
++              Email us
++            </p>
++            <a
++              href={`mailto:${CONTACT_EMAIL}`}
++              className="mt-2 block text-base font-medium text-gray-900 transition-colors hover:text-[var(--brand-green)] min-[400px]:text-lg sm:text-2xl md:text-3xl"
++            >
++              {/* Two inline-blocks so on phones it wraps after the @ and never mid-word */}
++              <span className="inline-block">{CONTACT_EMAIL.split("@")[0]}@</span>
++              <span className="inline-block">{CONTACT_EMAIL.split("@")[1]}</span>
++            </a>
++            <p className="mt-3 text-sm leading-relaxed text-gray-600">
++              Please include as much detail as you can, such as the page
++              address if you are writing about an article. We aim to reply
++              within a few business days.
++            </p>
++            <div className="mt-6 flex flex-wrap gap-3">
++              <a
++                href={`mailto:${CONTACT_EMAIL}`}
++                className="inline-block rounded-full bg-[var(--brand-green)] px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-800"
++              >
++                Send an email
++              </a>
++              <CopyEmailButton email={CONTACT_EMAIL} />
++            </div>
++          </div>
++        </section>
++
++        {/* Reasons */}
++        <section className="border-t border-gray-100 py-12">
++          <h2 className="mb-2 text-2xl font-medium text-gray-900">
++            What you can contact us about
++          </h2>
++          <p className="mb-6 text-gray-500">
++            Choose a topic and your email app will open with the subject
++            already filled in.
++          </p>
++          <div className="grid gap-4 sm:grid-cols-2">
++            {REASONS.map((reason) => (
++              <a
++                key={reason.title}
++                href={mailto(reason.subject)}
++                className="group flex flex-col rounded-2xl border border-gray-100 p-5 transition-colors hover:border-[var(--brand-green)]"
++              >
++                <h3 className="text-base font-medium text-gray-900 group-hover:text-[var(--brand-green)]">
++                  {reason.title}
++                </h3>
++                <p className="mt-2 text-sm leading-relaxed text-gray-500">
++                  {reason.text}
++                </p>
++                <span className="mt-auto pt-4 text-sm font-medium text-[var(--brand-green)]">
++                  Email us about this →
++                </span>
++              </a>
++            ))}
++          </div>
++        </section>
++
++        {/* Scope note */}
++        <section className="border-t border-gray-100 py-12">
++          <div className="rounded-xl border-l-4 border-amber-400 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-900">
++            <p className="mb-2 font-medium">Before you write</p>
++            <p>
++              We are a student information site, not a migration agency, law
++              firm, tax agent or financial adviser, so we can&apos;t give advice
++              on your personal visa, legal, tax or money situation. For that,
++              speak to a registered professional or the relevant government
++              agency. You can read more in our{" "}
++              <Link
++                href="/about#disclaimer"
++                className="font-medium underline underline-offset-2"
++              >
++                important notice
++              </Link>
++              .
++            </p>
++          </div>
++        </section>
++
++        {/* FAQ */}
++        <section className="border-t border-gray-100 py-12">
++          <h2 className="mb-6 text-2xl font-medium text-gray-900">
++            Quick answers
++          </h2>
++          <div className="divide-y divide-gray-100 rounded-2xl border border-gray-100">
++            {FAQS.map((item) => (
++              <details key={item.q} className="group px-5 py-4">
++                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-gray-900">
++                  {item.q}
++                  <span
++                    aria-hidden="true"
++                    className="text-[var(--brand-green)] transition-transform group-open:rotate-45"
++                  >
++                    +
++                  </span>
++                </summary>
++                <p className="mt-3 text-sm leading-relaxed text-gray-500">
++                  {item.a}
++                </p>
++              </details>
++            ))}
++          </div>
++        </section>
++
++        {/* Follow */}
++        <section className="border-t border-gray-100 py-12">
++          <h2 className="mb-2 text-2xl font-medium text-gray-900">
++            Prefer social media?
++          </h2>
++          <p className="mb-5 text-gray-500">
++            You can also find us on these channels. For anything that needs a
++            proper reply, email is best.
++          </p>
++          <div className="flex flex-wrap gap-3">
++            {[
++              {
++                label: "Facebook",
++                href: "https://www.facebook.com/profile.php?id=61572900125280",
++              },
++              {
++                label: "Instagram",
++                href: "https://www.instagram.com/internationalstudenttips/",
++              },
++              {
++                label: "TikTok",
++                href: "https://www.tiktok.com/@internationalstudenttips",
++              },
++            ].map((social) => (
++              <a
++                key={social.label}
++                href={social.href}
++                target="_blank"
++                rel="noopener noreferrer"
++                className="rounded-full border border-gray-200 px-5 py-2.5 text-sm text-gray-600 transition-colors hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
++              >
++                {social.label}
++              </a>
++            ))}
++          </div>
++        </section>
++      </div>
++    </>
++  );
++}
+diff --git a/src/app/page.js b/src/app/page.js
+index 6622e9c..78ef735 100644
+--- a/src/app/page.js
++++ b/src/app/page.js
+@@ -34,7 +34,7 @@ const FAQS = [
+   },
+   {
+     q: "Can I suggest a topic?",
+-    a: "Please do. Use the contact links on our About page to tell us what you are struggling to find answers on. Student questions decide what we write and update next.",
++    a: "Please do. Use our contact page to tell us what you are struggling to find answers on. Student questions decide what we write and update next.",
+   },
+ ];
+ 
+diff --git a/src/app/sitemap.js b/src/app/sitemap.js
+index bba2065..e5427fa 100644
+--- a/src/app/sitemap.js
++++ b/src/app/sitemap.js
+@@ -71,6 +71,11 @@ export default async function sitemap() {
+       changeFrequency: "monthly",
+       priority: 0.5,
+     },
++    {
++      url: canonicalUrl("/contact"),
++      changeFrequency: "yearly",
++      priority: 0.4,
++    },
+     {
+       url: canonicalUrl("/tools/rent-checker"),
+       changeFrequency: "monthly",
+diff --git a/src/components/CopyEmailButton.jsx b/src/components/CopyEmailButton.jsx
+new file mode 100644
+index 0000000..c6a8ad4
+--- /dev/null
++++ b/src/components/CopyEmailButton.jsx
+@@ -0,0 +1,30 @@
++"use client";
++
++import { useState } from "react";
++
++export default function CopyEmailButton({ email }) {
++  const [copied, setCopied] = useState(false);
++
++  async function copy() {
++    try {
++      await navigator.clipboard.writeText(email);
++      setCopied(true);
++      setTimeout(() => setCopied(false), 2000);
++    } catch {
++      // Clipboard can be blocked; the address is still visible to copy by hand
++    }
++  }
++
++  return (
++    <button
++      type="button"
++      onClick={copy}
++      className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition-colors hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
++    >
++      {copied ? "Copied!" : "Copy email address"}
++      <span className="sr-only" role="status" aria-live="polite">
++        {copied ? "Email address copied to clipboard" : ""}
++      </span>
++    </button>
++  );
++}
+diff --git a/src/components/Footer.js b/src/components/Footer.js
+index 37ddc35..5c012cb 100644
+--- a/src/components/Footer.js
++++ b/src/components/Footer.js
+@@ -3,6 +3,7 @@
+ import Image from "next/image";
+ import Link from "next/link";
+ import useNewsletterForm from "./newsletter/useNewsletterForm";
++import { CONTACT_EMAIL } from "@/lib/seo";
+ 
+ function Spinner() {
+   return (
+@@ -24,6 +25,24 @@ function Spinner() {
+   );
+ }
+ 
++const SOCIALS = [
++  {
++    label: "Facebook",
++    href: "https://www.facebook.com/profile.php?id=61572900125280",
++    path: "M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0022 12z",
++  },
++  {
++    label: "Instagram",
++    href: "https://www.instagram.com/internationalstudenttips/",
++    path: "M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85C2.38 3.92 3.9 2.38 7.15 2.23 8.42 2.17 8.8 2.16 12 2.16zM12 0C8.74 0 8.33.01 7.05.07 2.7.27.27 2.69.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.36 2.62 6.78 6.98 6.98C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c4.35-.2 6.78-2.62 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.35-2.62-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zM12 16a4 4 0 110-8 4 4 0 010 8zm6.4-11.85a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z",
++  },
++  {
++    label: "TikTok",
++    href: "https://www.tiktok.com/@internationalstudenttips",
++    path: "M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1.04-.1z",
++  },
++];
++
+ const FALLBACK_TOPICS = [
+   { slug: "visa-and-immigration", title: "Visa & Immigration" },
+   { slug: "housing", title: "Housing" },
+@@ -31,6 +50,23 @@ const FALLBACK_TOPICS = [
+   { slug: "tax-and-money", title: "Tax & Money" },
+ ];
+ 
++const EXPLORE_LINKS = [
++  { href: "/", label: "Home" },
++  { href: "/blog", label: "All guides & posts" },
++  { href: "/tools/rent-checker", label: "Rent Checker" },
++];
++
++const SUPPORT_LINKS = [
++  { href: "/about", label: "About us" },
++  { href: "/contact", label: "Contact us" },
++  { href: "/about#disclaimer", label: "Important notice" },
++];
++
++const columnHeading =
++  "mb-4 text-xs font-semibold uppercase tracking-widest text-white/50";
++const columnLink =
++  "text-sm text-white/70 transition-colors hover:text-white";
++
+ export default function Footer({ settings, categories }) {
+   const topics = categories?.length ? categories : FALLBACK_TOPICS;
+   const {
+@@ -43,27 +79,33 @@ export default function Footer({ settings, categories }) {
+   } = useNewsletterForm();
+ 
+   return (
+-    <footer className="mt-20">
+-      <div className="bg-[var(--brand-green)] py-12">
+-        <div className="max-w-6xl mx-auto px-6">
+-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+-            <div>
+-              <h3 className="text-xl font-bold text-white">
+-                Get Free Tips & Updates
+-              </h3>
+-              <p className="text-sm text-white/80 mt-1">
+-                Visa news, money tips, and housing guides — straight to your
+-                inbox.
++    <footer className="mt-24 bg-gray-950 text-white">
++      {/* Newsletter card, overlapping the top edge of the footer */}
++      <div id="newsletter" className="mx-auto max-w-6xl scroll-mt-24 px-6">
++        <div className="-mt-14 rounded-3xl bg-[var(--brand-green)] px-6 py-8 shadow-xl shadow-green-900/20 md:px-10 md:py-10">
++          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
++            <div className="max-w-md">
++              <h2 className="text-xl font-semibold text-white md:text-2xl">
++                Get free tips &amp; updates
++              </h2>
++              <p className="mt-2 text-sm leading-relaxed text-white/80">
++                Visa news, money tips and housing guides, straight to your
++                inbox. No spam, unsubscribe any time.
+               </p>
+             </div>
++
+             {formState === "success" ? (
+-              <div className="flex items-center gap-2 text-white">
++              <div
++                role="status"
++                className="flex items-center gap-2 rounded-xl bg-white/15 px-5 py-3 text-white"
++              >
+                 <svg
+                   className="h-5 w-5 shrink-0"
+                   fill="none"
+                   viewBox="0 0 24 24"
+                   stroke="currentColor"
+                   strokeWidth={2}
++                  aria-hidden="true"
+                 >
+                   <path
+                     strokeLinecap="round"
+@@ -78,28 +120,36 @@ export default function Footer({ settings, categories }) {
+             ) : (
+               <form
+                 onSubmit={handleSubmit}
+-                className="flex flex-col sm:flex-row gap-3 w-full md:w-auto"
++                className="flex w-full flex-col gap-3 sm:flex-row md:w-auto"
+               >
++                <label htmlFor="footer-first-name" className="sr-only">
++                  First name
++                </label>
+                 <input
++                  id="footer-first-name"
+                   type="text"
+-                  placeholder="First Name"
++                  placeholder="First name"
+                   value={firstName}
+                   onChange={(e) => handleChange("firstName", e.target.value)}
+                   disabled={formState === "loading"}
+-                  className="w-full sm:w-36 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/60 focus:border-white focus:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
++                  className="w-full rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/60 focus:border-white focus:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-36"
+                 />
++                <label htmlFor="footer-email" className="sr-only">
++                  Email address
++                </label>
+                 <input
++                  id="footer-email"
+                   type="email"
+-                  placeholder="Email Address"
++                  placeholder="Email address"
+                   value={email}
+                   onChange={(e) => handleChange("email", e.target.value)}
+                   disabled={formState === "loading"}
+-                  className="w-full sm:w-56 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/60 focus:border-white focus:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
++                  className="w-full rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/60 focus:border-white focus:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-56"
+                 />
+                 <button
+                   type="submit"
+                   disabled={formState === "loading"}
+-                  className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--brand-green)] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-70"
++                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-green)] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-70"
+                 >
+                   {formState === "loading" ? (
+                     <>
+@@ -114,123 +164,139 @@ export default function Footer({ settings, categories }) {
+             )}
+           </div>
+           {formState === "error" && errorMessage && (
+-            <p className="mt-3 text-center text-sm text-red-200">
++            <p role="alert" className="mt-4 text-sm text-red-100">
+               {errorMessage}
+             </p>
+           )}
+         </div>
+       </div>
+ 
+-      <div className="border-t border-gray-100 bg-gray-50">
+-        <div className="max-w-6xl mx-auto px-6 py-12">
+-          <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+-            <div>
++      {/* Main footer */}
++      <div className="mx-auto max-w-6xl px-6 pt-14 pb-8">
++        <div className="grid gap-12 md:grid-cols-12">
++          {/* Brand */}
++          <div className="md:col-span-5">
++            <Link href="/" className="inline-block rounded-lg bg-white px-3 py-2">
+               <Image
+                 src="/logo.png"
+                 alt="International Student Tips"
+-                width={120}
+-                height={52}
++                width={116}
++                height={49}
+               />
+-              <p className="text-sm text-gray-500 mt-3 max-w-xs">
+-                {settings?.footerTagline ||
+-                  "Helping international students thrive in Australia with practical, honest guides."}
+-              </p>
+-              <div className="grid py-3 grid-cols-3 gap-1">
+-                <a
+-                  target="_blank"
+-                  rel="noopener noreferrer"
+-                  href="https://www.facebook.com/profile.php?id=61572900125280"
+-                >
+-                  <Image src="/fb.png" alt="Facebook" width={24} height={24} />
+-                </a>
+-                <a
+-                  target="_blank"
+-                  rel="noopener noreferrer"
+-                  href="https://www.instagram.com/internationalstudenttips/"
+-                >
+-                  <Image
+-                    src="/insta.png"
+-                    alt="Instagram"
+-                    width={24}
+-                    height={24}
+-                  />
+-                </a>
+-                <a
+-                  target="_blank"
+-                  rel="noopener noreferrer"
+-                  href="https://www.tiktok.com/@internationalstudenttips"
+-                >
+-                  <Image
+-                    src="/tik-tok.png"
+-                    alt="TikTok"
+-                    width={24}
+-                    height={24}
+-                  />
+-                </a>
+-              </div>
+-            </div>
+-            <div className="flex gap-16">
+-              <div>
+-                <h4 className="text-sm font-medium text-gray-800 mb-3">
+-                  Topics
+-                </h4>
+-                <div className="flex flex-col gap-2">
+-                  {topics.map((topic) => (
++            </Link>
++            <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/70">
++              {settings?.footerTagline ||
++                "Helping international students thrive in Australia with practical, honest guides."}
++            </p>
++
++            <a
++              href={`mailto:${CONTACT_EMAIL}`}
++              className="mt-5 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white"
++            >
++              <svg
++                className="h-4 w-4 shrink-0"
++                fill="none"
++                viewBox="0 0 24 24"
++                stroke="currentColor"
++                strokeWidth={1.8}
++                aria-hidden="true"
++              >
++                <path
++                  strokeLinecap="round"
++                  strokeLinejoin="round"
++                  d="M3 8l9 6 9-6M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"
++                />
++              </svg>
++              {CONTACT_EMAIL}
++            </a>
++
++            <ul className="mt-6 flex items-center gap-3">
++              {SOCIALS.map((social) => (
++                <li key={social.label}>
++                  <a
++                    href={social.href}
++                    target="_blank"
++                    rel="noopener noreferrer"
++                    aria-label={social.label}
++                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-[var(--brand-green)] hover:text-white"
++                  >
++                    <svg
++                      className="h-[18px] w-[18px]"
++                      viewBox="0 0 24 24"
++                      fill="currentColor"
++                      aria-hidden="true"
++                    >
++                      <path d={social.path} />
++                    </svg>
++                  </a>
++                </li>
++              ))}
++            </ul>
++          </div>
++
++          {/* Link columns */}
++          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:col-span-7">
++            <nav aria-label="Topics">
++              <h3 className={columnHeading}>Topics</h3>
++              <ul className="flex flex-col gap-3">
++                {topics.map((topic) => (
++                  <li key={topic.slug}>
+                     <Link
+-                      key={topic.slug}
+                       href={`/blog/category/${topic.slug}`}
+-                      className="text-sm text-gray-500 hover:text-[#048442]"
++                      className={columnLink}
+                     >
+                       {topic.title}
+                     </Link>
+-                  ))}
+-                </div>
+-              </div>
+-              <div>
+-                <h4 className="text-sm font-medium text-gray-800 mb-3">Site</h4>
+-                <div className="flex flex-col gap-2">
+-                  <Link
+-                    href="/"
+-                    className="text-sm text-gray-500 hover:text-[#048442]"
+-                  >
+-                    Home
+-                  </Link>
+-                  <Link
+-                    href="/blog"
+-                    className="text-sm text-gray-500 hover:text-[#048442]"
+-                  >
+-                    Blog
+-                  </Link>
+-                  <Link
+-                    href="/tools/rent-checker"
+-                    className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
+-                  >
+-                    Rent Checker
+-                  </Link>
+-                  <Link
+-                    href="/about"
+-                    className="text-sm text-gray-500 hover:text-[#048442]"
+-                  >
+-                    About
+-                  </Link>
+-                </div>
+-              </div>
+-            </div>
++                  </li>
++                ))}
++              </ul>
++            </nav>
++            <nav aria-label="Explore">
++              <h3 className={columnHeading}>Explore</h3>
++              <ul className="flex flex-col gap-3">
++                {EXPLORE_LINKS.map((link) => (
++                  <li key={link.href}>
++                    <Link href={link.href} className={columnLink}>
++                      {link.label}
++                    </Link>
++                  </li>
++                ))}
++              </ul>
++            </nav>
++            <nav aria-label="Support">
++              <h3 className={columnHeading}>Support</h3>
++              <ul className="flex flex-col gap-3">
++                {SUPPORT_LINKS.map((link) => (
++                  <li key={link.href}>
++                    <Link href={link.href} className={columnLink}>
++                      {link.label}
++                    </Link>
++                  </li>
++                ))}
++              </ul>
++            </nav>
+           </div>
+-          <div className="border-t border-gray-100 mt-10 pt-6 text-sm text-gray-400">
+-            <p className="mb-3 max-w-3xl text-xs leading-relaxed text-gray-400">
+-              Our guides are general information for international students, not
+-              migration, legal, tax or financial advice. Rules change, so always
+-              check the official source or speak to a registered professional
+-              before making decisions.{" "}
+-              <Link href="/about#disclaimer" className="underline">
+-                Read our full notice
+-              </Link>
+-              .
+-            </p>
++        </div>
++
++        {/* Bottom bar */}
++        <div className="mt-12 border-t border-white/10 pt-6">
++          <p className="max-w-3xl text-xs leading-relaxed text-white/50">
++            Our guides are general information for international students, not
++            migration, legal, tax or financial advice. Rules change, so always
++            check the official source or speak to a registered professional
++            before making decisions.{" "}
++            <Link
++              href="/about#disclaimer"
++              className="underline underline-offset-2 transition-colors hover:text-white"
++            >
++              Read our full notice
++            </Link>
++            .
++          </p>
++          <p className="mt-4 text-xs text-white/50">
+             © {new Date().getFullYear()} International Student Tips. All rights
+             reserved.
+-          </div>
++          </p>
+         </div>
+       </div>
+     </footer>
+diff --git a/src/components/Navbar.js b/src/components/Navbar.js
+index b01bb38..3433ad2 100644
+--- a/src/components/Navbar.js
++++ b/src/components/Navbar.js
+@@ -2,121 +2,176 @@
+ 
+ import Image from "next/image";
+ import Link from "next/link";
+-import { useState } from "react";
++import { usePathname } from "next/navigation";
++import { useEffect, useState } from "react";
++
++const NAV_LINKS = [
++  { href: "/", label: "Home" },
++  { href: "/blog", label: "Guides" },
++  { href: "/tools/rent-checker", label: "Rent Checker" },
++  { href: "/about", label: "About" },
++];
++
++function isActive(pathname, href) {
++  if (href === "/") return pathname === "/";
++  return pathname === href || pathname.startsWith(`${href}/`);
++}
+ 
+ export default function Navbar() {
+-  const [isOpen, setIsOpen] = useState(false);
++  const [menuState, setMenuState] = useState({ open: false, path: "" });
++  const [scrolled, setScrolled] = useState(false);
++  const pathname = usePathname();
++
++  // The menu counts as open only on the page it was opened on, so navigating
++  // anywhere closes it without needing an effect to reset state.
++  const isOpen = menuState.open && menuState.path === pathname;
++
++  function toggleMenu() {
++    setMenuState({ open: !isOpen, path: pathname });
++  }
++
++  function closeMenu() {
++    setMenuState({ open: false, path: pathname });
++  }
++
++  // Subtle shadow once the page has scrolled
++  useEffect(() => {
++    const onScroll = () => setScrolled(window.scrollY > 8);
++    onScroll();
++    window.addEventListener("scroll", onScroll, { passive: true });
++    return () => window.removeEventListener("scroll", onScroll);
++  }, []);
++
++  // Close the mobile menu with Escape
++  useEffect(() => {
++    if (!isOpen) return;
++    const onKey = (e) => {
++      if (e.key === "Escape") setMenuState({ open: false, path: pathname });
++    };
++    window.addEventListener("keydown", onKey);
++    return () => window.removeEventListener("keydown", onKey);
++  }, [isOpen, pathname]);
+ 
+   return (
+-    <nav className="border-b border-gray-100 bg-white sticky top-0 z-50">
+-      <div className="max-w-6xl mx-auto px-6 py-4">
+-        <div className="flex items-center justify-between">
+-          {/* Logo */}
+-          <Link href="/">
+-            <Image
+-              src="/logo.png"
+-              alt="International Student Tips"
+-              width={140}
+-              height={60}
+-              priority
+-            />
+-          </Link>
++    <header
++      className={`sticky top-0 z-50 border-b backdrop-blur-md transition-shadow ${
++        scrolled
++          ? "border-gray-200/80 bg-white/90 shadow-sm"
++          : "border-gray-100 bg-white/80"
++      }`}
++    >
++      <nav
++        aria-label="Main"
++        className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6"
++      >
++        {/* Logo */}
++        <Link href="/" className="shrink-0" aria-label="International Student Tips home">
++          <Image
++            src="/logo.png"
++            alt="International Student Tips"
++            width={128}
++            height={54}
++            priority
++          />
++        </Link>
+ 
+-          {/* Desktop Navigation */}
+-          <div className="hidden md:flex items-center gap-8">
+-            <Link
+-              href="/"
+-              className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
+-            >
+-              Home
+-            </Link>
+-            <Link
+-              href="/blog"
+-              className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
+-            >
+-              Blogs
+-            </Link>
+-            <Link
+-              href="/tools/rent-checker"
+-              className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
+-            >
+-              Rent Checker
+-            </Link>
+-            <Link
+-              href="/about"
+-              className="text-sm text-gray-600 hover:text-[#048442] transition-colors"
+-            >
+-              About
+-            </Link>
+-          </div>
++        {/* Desktop navigation */}
++        <ul className="hidden items-center gap-1 md:flex">
++          {NAV_LINKS.map((link) => {
++            const active = isActive(pathname, link.href);
++            return (
++              <li key={link.href}>
++                <Link
++                  href={link.href}
++                  aria-current={active ? "page" : undefined}
++                  className={`rounded-full px-4 py-2 text-sm transition-colors ${
++                    active
++                      ? "bg-[var(--brand-green-light)] font-medium text-[var(--brand-green)]"
++                      : "text-gray-600 hover:bg-gray-50 hover:text-[var(--brand-green)]"
++                  }`}
++                >
++                  {link.label}
++                </Link>
++              </li>
++            );
++          })}
++        </ul>
+ 
+-          {/* Mobile Hamburger */}
+-          <button
+-            onClick={() => setIsOpen(!isOpen)}
+-            className="md:hidden p-2 -mr-2 text-gray-600 hover:text-[#048442]"
+-            aria-label="Toggle menu"
++        <div className="hidden items-center gap-3 md:flex">
++          <Link
++            href="/contact"
++            aria-current={isActive(pathname, "/contact") ? "page" : undefined}
++            className="rounded-full bg-[var(--brand-green)] px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-800"
+           >
+-            <svg
+-              xmlns="http://www.w3.org/2000/svg"
+-              className="h-6 w-6"
+-              fill="none"
+-              viewBox="0 0 24 24"
+-              stroke="currentColor"
+-              strokeWidth={2}
+-            >
+-              {isOpen ? (
+-                <path
+-                  strokeLinecap="round"
+-                  strokeLinejoin="round"
+-                  d="M6 18L18 6M6 6h12v12"
+-                />
+-              ) : (
+-                <path
+-                  strokeLinecap="round"
+-                  strokeLinejoin="round"
+-                  d="M4 6h16M4 12h16M4 18h16"
+-                />
+-              )}
+-            </svg>
+-          </button>
++            Contact us
++          </Link>
+         </div>
+ 
+-        {/* Mobile Menu */}
+-        {isOpen && (
+-          <div className="md:hidden mt-4 border-t border-gray-100 pt-4">
+-            <div className="flex flex-col space-y-4 text-sm">
+-              <Link
+-                href="/"
+-                className="text-gray-600 hover:text-[#048442] py-2 transition-colors"
+-                onClick={() => setIsOpen(false)}
+-              >
+-                Home
+-              </Link>
+-              <Link
+-                href="/blog"
+-                className="text-gray-600 hover:text-[#048442] py-2 transition-colors"
+-                onClick={() => setIsOpen(false)}
+-              >
+-                Blogs
+-              </Link>
+-              <Link
+-                href="/tools/rent-checker"
+-                className="text-gray-600 hover:text-[#048442] py-2 transition-colors"
+-                onClick={() => setIsOpen(false)}
+-              >
+-                Rent Checker
+-              </Link>
++        {/* Mobile hamburger */}
++        <button
++          type="button"
++          onClick={toggleMenu}
++          className="-mr-2 rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-50 hover:text-[var(--brand-green)] md:hidden"
++          aria-label={isOpen ? "Close menu" : "Open menu"}
++          aria-expanded={isOpen}
++          aria-controls="mobile-menu"
++        >
++          <svg
++            xmlns="http://www.w3.org/2000/svg"
++            className="h-6 w-6"
++            fill="none"
++            viewBox="0 0 24 24"
++            stroke="currentColor"
++            strokeWidth={2}
++            aria-hidden="true"
++          >
++            {isOpen ? (
++              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
++            ) : (
++              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
++            )}
++          </svg>
++        </button>
++      </nav>
++
++      {/* Mobile menu */}
++      {isOpen && (
++        <div
++          id="mobile-menu"
++          className="border-t border-gray-100 bg-white md:hidden"
++        >
++          <ul className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
++            {NAV_LINKS.map((link) => {
++              const active = isActive(pathname, link.href);
++              return (
++                <li key={link.href}>
++                  <Link
++                    href={link.href}
++                    onClick={closeMenu}
++                    aria-current={active ? "page" : undefined}
++                    className={`block rounded-lg px-4 py-3 text-sm transition-colors ${
++                      active
++                        ? "bg-[var(--brand-green-light)] font-medium text-[var(--brand-green)]"
++                        : "text-gray-700 hover:bg-gray-50"
++                    }`}
++                  >
++                    {link.label}
++                  </Link>
++                </li>
++              );
++            })}
++            <li className="pt-2">
+               <Link
+-                href="/about"
+-                className="text-gray-600 hover:text-[#048442] py-2 transition-colors"
+-                onClick={() => setIsOpen(false)}
++                href="/contact"
++                onClick={closeMenu}
++                className="block rounded-lg bg-[var(--brand-green)] px-4 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-green-800"
+               >
+-                About
++                Contact us
+               </Link>
+-            </div>
+-          </div>
+-        )}
+-      </div>
+-    </nav>
++            </li>
++          </ul>
++        </div>
++      )}
++    </header>
+   );
+ }
+diff --git a/src/lib/seo.js b/src/lib/seo.js
+index dcc3f50..22fcef5 100644
+--- a/src/lib/seo.js
++++ b/src/lib/seo.js
+@@ -1,5 +1,6 @@
+ export const SITE_URL = "https://www.internationalstudenttips.com.au";
+ export const SITE_NAME = "International Student Tips";
++export const CONTACT_EMAIL = "hello@internationalstudenttips.com.au";
+ export const DEFAULT_DESCRIPTION =
+   "Practical guides for international students in Australia.";
+ 
+@@ -88,6 +89,15 @@ export function organizationJsonLd() {
+       width: 415,
+       height: 175,
+     },
++    email: CONTACT_EMAIL,
++    contactPoint: {
++      "@type": "ContactPoint",
++      contactType: "customer support",
++      email: CONTACT_EMAIL,
++      areaServed: "AU",
++      availableLanguage: "English",
++      url: `${SITE_URL}/contact`,
++    },
+     sameAs: [
+       "https://www.facebook.com/profile.php?id=61572900125280",
+       "https://www.instagram.com/internationalstudenttips/",

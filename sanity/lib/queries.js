@@ -10,6 +10,7 @@ export const postsQuery = groq`
     excerpt,
     featured,
     mainImage,
+    "wordCount": length(string::split(pt::text(body), " ")),
     "author": author->name,
     "categories": categories[]->title,
     "categorySlugs": categories[]->slug.current,
@@ -19,14 +20,42 @@ export const postsQuery = groq`
 export const postQuery = groq`
   *[_type == "post" && slug.current == $slug][0] {
     _id,
+    _updatedAt,
     title,
     slug,
     publishedAt,
     excerpt,
     body,
     mainImage,
+    "wordCount": length(string::split(pt::text(body), " ")),
     "author": author->name,
     "categories": categories[]->title,
+    "categorySlugs": categories[]->slug.current,
+  }
+`;
+
+// Categories plus how many posts sit in each (used on the home and About pages)
+export const categoriesWithCountQuery = groq`
+  *[_type == "category"] | order(title asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    description,
+    "postCount": count(*[_type == "post" && references(^._id)]),
+  }
+`;
+
+// Guide pages for listings. Guides keep their category as free text.
+export const guidesListQuery = groq`
+  *[_type == "guidePage" && defined(slug.current)] | order(publishedAt desc) {
+    _id,
+    _updatedAt,
+    title,
+    subtitle,
+    category,
+    readTime,
+    publishedAt,
+    "slug": slug.current,
   }
 `;
 
@@ -47,6 +76,7 @@ export const featuredPostQuery = groq`
     publishedAt,
     excerpt,
     mainImage,
+    "wordCount": length(string::split(pt::text(body), " ")),
     "author": author->name,
     "categories": categories[]->title,
   }
@@ -73,6 +103,7 @@ export const postsByCategoryQuery = groq`
     publishedAt,
     excerpt,
     mainImage,
+    "wordCount": length(string::split(pt::text(body), " ")),
     "author": author->name,
     "categories": categories[]->title,
     "categorySlugs": categories[]->slug.current,

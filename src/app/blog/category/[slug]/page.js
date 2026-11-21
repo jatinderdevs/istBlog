@@ -12,6 +12,7 @@ import {
   breadcrumbJsonLd,
   canonicalUrl,
   DEFAULT_OG_IMAGE,
+  readTimeLabel,
 } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -58,6 +59,8 @@ export async function generateMetadata({ params }) {
     },
     twitter: {
       card: "summary_large_image",
+      title,
+      description,
       images: [DEFAULT_OG_IMAGE],
     },
   };
@@ -169,8 +172,9 @@ export default async function CategoryPage({ params }) {
                   {post.mainImage ? (
                     <Image
                       src={urlFor(post.mainImage).width(600).height(400).url()}
-                      alt={post.title}
+                      alt={post.mainImage.alt || post.title}
                       fill
+                      sizes="(min-width: 768px) 33vw, 100vw"
                       className="object-cover"
                     />
                   ) : (
@@ -194,8 +198,12 @@ export default async function CategoryPage({ params }) {
                     </p>
                   )}
                   <p className="text-xs text-gray-400">
-                    {post.publishedAt && formatDate(post.publishedAt)} · 5 min
-                    read
+                    {[
+                      post.publishedAt && formatDate(post.publishedAt),
+                      readTimeLabel(post.wordCount),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </div>
               </Link>

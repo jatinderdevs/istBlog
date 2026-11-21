@@ -2,6 +2,7 @@ import { groq } from "next-sanity";
 
 export const guidePageQuery = groq`
   *[_type == "guidePage" && slug.current == $slug][0] {
+    _updatedAt,
     title,
     subtitle,
     category,

@@ -1,5 +1,6 @@
 export const SITE_URL = "https://www.internationalstudenttips.com.au";
 export const SITE_NAME = "International Student Tips";
+export const CONTACT_EMAIL = "hello@internationalstudenttips.com.au";
 export const DEFAULT_DESCRIPTION =
   "Practical guides for international students in Australia.";
 
@@ -88,11 +89,45 @@ export function organizationJsonLd() {
       width: 415,
       height: 175,
     },
+    email: CONTACT_EMAIL,
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: CONTACT_EMAIL,
+      areaServed: "AU",
+      availableLanguage: "English",
+      url: `${SITE_URL}/contact`,
+    },
     sameAs: [
       "https://www.facebook.com/profile.php?id=61572900125280",
       "https://www.instagram.com/internationalstudenttips/",
       "https://www.tiktok.com/@internationalstudenttips",
     ],
+  });
+}
+
+/**
+ * Estimated reading time in minutes from a word count (200 wpm).
+ * Returns null when the count is unknown so callers can hide the label.
+ */
+export function readMinutes(wordCount) {
+  if (!wordCount || Number.isNaN(Number(wordCount))) return null;
+  return Math.max(1, Math.ceil(Number(wordCount) / 200));
+}
+
+export function readTimeLabel(wordCount) {
+  const minutes = readMinutes(wordCount);
+  return minutes ? `${minutes} min read` : null;
+}
+
+export function websiteJsonLd() {
+  return jsonLd({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    inLanguage: "en-AU",
+    publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
   });
 }
 
@@ -102,8 +137,10 @@ export function articleJsonLd({
   description,
   url,
   datePublished,
+  dateModified,
   image,
   author,
+  authorUrl,
 }) {
   const schema = {
     "@context": "https://schema.org",
@@ -128,9 +165,19 @@ export function articleJsonLd({
     },
   };
 
+  schema.inLanguage = "en-AU";
   if (datePublished) schema.datePublished = datePublished;
+  if (dateModified || datePublished) {
+    schema.dateModified = dateModified || datePublished;
+  }
   if (image) schema.image = image;
-  if (author) schema.author = { "@type": "Person", name: author };
+  if (author) {
+    schema.author = {
+      "@type": "Person",
+      name: author,
+      ...(authorUrl ? { url: authorUrl } : {}),
+    };
+  }
 
   return jsonLd(schema);
 }

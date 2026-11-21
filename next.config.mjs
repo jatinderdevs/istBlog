@@ -13,6 +13,8 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // Note: old filter URLs (/blog?category=housing) are redirected to the
+      // clean category pages in src/proxy.js, which can drop the query string.
       {
         source: "/blog/top-student-discounts-and-perks-in-australia",
         destination: "/blog",

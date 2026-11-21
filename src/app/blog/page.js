@@ -1,8 +1,18 @@
 import Link from "next/link";
 import { client } from "../../../sanity/lib/client";
-import { postsQuery, categoriesQuery } from "../../../sanity/lib/queries";
+import {
+  postsQuery,
+  categoriesQuery,
+  guidesListQuery,
+} from "../../../sanity/lib/queries";
 import BlogPostGrid from "@/components/blog/BlogPostGrid";
-import { canonicalUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
+import GuideCard from "@/components/blog/GuideCard";
+import {
+  breadcrumbJsonLd,
+  canonicalUrl,
+  DEFAULT_OG_IMAGE,
+  jsonLd,
+} from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -24,70 +34,119 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    title: "Student Guides & Tips",
+    description,
     images: [DEFAULT_OG_IMAGE],
   },
 };
 
-export default async function BlogPage({ searchParams }) {
-  const resolvedParams = await searchParams;
-  const selectedCategory = resolvedParams?.category || "";
-
-  const [allPosts, categories] = await Promise.all([
+// Note: category filtering now lives on /blog/category/[slug]. Old
+// /blog?category=... links are redirected there in next.config.mjs, so this
+// page no longer reads searchParams and can be statically rendered.
+export default async function BlogPage() {
+  const [posts, categories, guides] = await Promise.all([
     client.fetch(postsQuery),
     client.fetch(categoriesQuery),
+    client.fetch(guidesListQuery),
   ]);
 
-  const posts = selectedCategory
-    ? allPosts.filter((post) => post.categorySlugs?.includes(selectedCategory))
-    : allPosts;
+  const listItems = [
+    ...guides.map((guide) => canonicalUrl(`/blog/${guide.slug}`)),
+    ...posts.map((post) => canonicalUrl(`/blog/${post.slug.current}`)),
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-16">
-      {/* Header */}
-      <div className="mb-10">
-        <span className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest">
-          {selectedCategory ? "Filtered Posts" : "All Posts"}
-        </span>
-        <h1 className="text-4xl font-medium text-gray-900 mt-2 mb-4">
-          {selectedCategory
-            ? categories.find((c) => c.slug === selectedCategory)?.title ||
-              "Posts"
-            : "Guides & Tips"}
-        </h1>
-        <p className="text-gray-500 max-w-xl">
-          Everything you need to know about living and studying in Australia as
-          an international student.
-        </p>
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: breadcrumbJsonLd([
+            { name: "Home", url: canonicalUrl("/") },
+            { name: "Blog", url: canonicalUrl("/blog") },
+          ]),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "Student Guides & Tips",
+            description,
+            url: canonicalUrl("/blog"),
+            mainEntity: {
+              "@type": "ItemList",
+              itemListElement: listItems.slice(0, 50).map((url, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                url,
+              })),
+            },
+          }),
+        }}
+      />
 
-      {/* Category Filter Pills */}
-      <div className="flex gap-2 flex-wrap mb-10">
-        <Link
-          href="/blog"
-          className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
-            !selectedCategory
-              ? "border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
-              : "border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
-          }`}
-        >
-          All
-        </Link>
-        {categories.map((cat) => (
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        {/* Header */}
+        <div className="mb-10">
+          <span className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest">
+            All Posts
+          </span>
+          <h1 className="text-4xl font-medium text-gray-900 mt-2 mb-4">
+            Guides &amp; Tips
+          </h1>
+          <p className="text-gray-500 max-w-xl">
+            Everything you need to know about living and studying in Australia
+            as an international student.
+          </p>
+        </div>
+
+        {/* Category pills (link to clean category pages) */}
+        <div className="flex gap-2 flex-wrap mb-12">
           <Link
-            key={cat._id}
-            href={`/blog/category/${cat.slug}`}
-            className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
-              selectedCategory === cat.slug
-                ? "border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
-                : "border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
-            }`}
+            href="/blog"
+            className="text-sm px-4 py-1.5 rounded-full border border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
           >
-            {cat.title}
+            All
           </Link>
-        ))}
-      </div>
+          {categories.map((cat) => (
+            <Link
+              key={cat._id}
+              href={`/blog/category/${cat.slug}`}
+              className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
+            >
+              {cat.title}
+            </Link>
+          ))}
+        </div>
 
-      <BlogPostGrid posts={posts} />
-    </div>
+        {/* Complete guides */}
+        {guides.length > 0 && (
+          <section className="mb-16">
+            <h2 className="text-2xl font-medium text-gray-900 mb-2">
+              Complete guides
+            </h2>
+            <p className="text-gray-500 mb-6 max-w-2xl">
+              In-depth, step-by-step guides you can work through from start to
+              finish.
+            </p>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {guides.map((guide) => (
+                <GuideCard key={guide._id} guide={guide} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Posts */}
+        <section>
+          <h2 className="text-2xl font-medium text-gray-900 mb-6">
+            Latest articles
+          </h2>
+          <BlogPostGrid posts={posts} />
+        </section>
+      </div>
+    </>
   );
 }

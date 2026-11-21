@@ -72,6 +72,11 @@ export default async function sitemap() {
       priority: 0.5,
     },
     {
+      url: canonicalUrl("/contact"),
+      changeFrequency: "yearly",
+      priority: 0.4,
+    },
+    {
       url: canonicalUrl("/tools/rent-checker"),
       changeFrequency: "monthly",
       priority: 0.5,

@@ -32,6 +32,7 @@ import {
   descriptionFrom,
   keywordList,
   portableTextToText,
+  readTimeLabel,
   SITE_NAME,
 } from "@/lib/seo";
 
@@ -178,8 +179,9 @@ const portableTextComponents = {
           <div className="relative w-full h-96 rounded-2xl overflow-hidden">
             <Image
               src={urlFor(value).width(1200).height(800).url()}
-              alt={value.alt || "Blog image"}
+              alt={value.alt || value.caption || ""}
               fill
+              sizes="(min-width: 768px) 768px, 100vw"
               className="object-cover"
             />
           </div>
@@ -288,10 +290,12 @@ const portableTextComponents = {
     normal: ({ children }) => (
       <p className="text-gray-700 leading-relaxed mb-5 text-lg">{children}</p>
     ),
+    // The page title is already the <h1>; an h1 inside the body renders as <h2>
+    // so there is only ever one H1 per page.
     h1: ({ children }) => (
-      <h1 className="text-3xl font-medium text-gray-900 mt-10 mb-4">
+      <h2 className="text-3xl font-medium text-gray-900 mt-10 mb-4">
         {children}
-      </h1>
+      </h2>
     ),
     h2: ({ children }) => (
       <h2 className="text-2xl font-medium text-gray-900 mt-10 mb-4">
@@ -375,6 +379,13 @@ function BlogPost({ post }) {
   const image = post.mainImage
     ? urlFor(post.mainImage).width(1200).height(630).url()
     : DEFAULT_OG_IMAGE.url;
+  const readTime = readTimeLabel(post.wordCount);
+
+  // Only show "Updated" when the post was edited at least a day after publishing
+  const showUpdated =
+    post._updatedAt &&
+    post.publishedAt &&
+    new Date(post._updatedAt) - new Date(post.publishedAt) > 24 * 60 * 60 * 1000;
 
   return (
     <>
@@ -387,8 +398,10 @@ function BlogPost({ post }) {
             description,
             url: canonical,
             datePublished: post.publishedAt,
+            dateModified: post._updatedAt,
             image,
             author: post.author,
+            authorUrl: canonicalUrl("/about"),
           }),
         }}
       />
@@ -418,24 +431,47 @@ function BlogPost({ post }) {
           <h1 className="text-4xl font-medium text-gray-900 leading-tight mb-5">
             {post.title}
           </h1>
-          <div className="flex items-center gap-4 text-sm text-gray-400">
-            {post.author && <span>By {post.author}</span>}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+            {post.author && (
+              <span>
+                By{" "}
+                <Link href="/about" className="hover:text-[var(--brand-green)]">
+                  {post.author}
+                </Link>
+              </span>
+            )}
             {post.publishedAt && (
               <>
                 <span>·</span>
-                <span>{formatDate(post.publishedAt)}</span>
+                <time dateTime={post.publishedAt}>
+                  {formatDate(post.publishedAt)}
+                </time>
               </>
             )}
-            <span>·</span>
-            <span>5 min read</span>
+            {showUpdated && (
+              <>
+                <span>·</span>
+                <time dateTime={post._updatedAt}>
+                  Updated {formatDate(post._updatedAt)}
+                </time>
+              </>
+            )}
+            {readTime && (
+              <>
+                <span>·</span>
+                <span>{readTime}</span>
+              </>
+            )}
           </div>
         </div>
         <div className="relative w-full h-72 rounded-2xl overflow-hidden mb-12 bg-[var(--brand-green-light)]">
           {post.mainImage ? (
             <Image
               src={urlFor(post.mainImage).width(1200).height(600).url()}
-              alt={post.title}
+              alt={post.mainImage.alt || post.title}
               fill
+              priority
+              sizes="(min-width: 768px) 768px, 100vw"
               className="object-cover"
             />
           ) : (
@@ -458,6 +494,18 @@ function BlogPost({ post }) {
 
       <div className="max-w-3xl mx-auto px-6 ">
         <div className="border-t border-gray-100 pt-8">
+          <p className="mb-6 rounded-xl bg-gray-50 px-5 py-4 text-sm leading-relaxed text-gray-500">
+            This article is general information for international students, not
+            migration, legal, tax or financial advice. Rules change, so check
+            the official source before you act.{" "}
+            <Link
+              href="/about#disclaimer"
+              className="text-[var(--brand-green)] underline underline-offset-2"
+            >
+              How we write and check our guides
+            </Link>
+            .
+          </p>
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 text-sm border border-[var(--brand-green)] text-[var(--brand-green)] px-5 py-2.5 rounded-lg hover:bg-[var(--brand-green)] hover:text-white transition-colors"
@@ -494,6 +542,8 @@ function GuidePage({ guide }) {
             description,
             url: canonical,
             datePublished: guide.publishedAt,
+            dateModified: guide._updatedAt,
+            image: DEFAULT_OG_IMAGE.url,
           }),
         }}
       />

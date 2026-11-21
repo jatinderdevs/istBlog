@@ -1,0 +1,1993 @@
+diff --git a/next.config.mjs b/next.config.mjs
+index 81e1d50..e6d8ed7 100644
+--- a/next.config.mjs
++++ b/next.config.mjs
+@@ -13,6 +13,8 @@ const nextConfig = {
+ 
+   async redirects() {
+     return [
++      // Note: old filter URLs (/blog?category=housing) are redirected to the
++      // clean category pages in src/proxy.js, which can drop the query string.
+       {
+         source: "/blog/top-student-discounts-and-perks-in-australia",
+         destination: "/blog",
+diff --git a/sanity/lib/queries.js b/sanity/lib/queries.js
+index 356b337..b0511dc 100644
+--- a/sanity/lib/queries.js
++++ b/sanity/lib/queries.js
+@@ -10,6 +10,7 @@ export const postsQuery = groq`
+     excerpt,
+     featured,
+     mainImage,
++    "wordCount": length(string::split(pt::text(body), " ")),
+     "author": author->name,
+     "categories": categories[]->title,
+     "categorySlugs": categories[]->slug.current,
+@@ -19,14 +20,42 @@ export const postsQuery = groq`
+ export const postQuery = groq`
+   *[_type == "post" && slug.current == $slug][0] {
+     _id,
++    _updatedAt,
+     title,
+     slug,
+     publishedAt,
+     excerpt,
+     body,
+     mainImage,
++    "wordCount": length(string::split(pt::text(body), " ")),
+     "author": author->name,
+     "categories": categories[]->title,
++    "categorySlugs": categories[]->slug.current,
++  }
++`;
++
++// Categories plus how many posts sit in each (used on the home and About pages)
++export const categoriesWithCountQuery = groq`
++  *[_type == "category"] | order(title asc) {
++    _id,
++    title,
++    "slug": slug.current,
++    description,
++    "postCount": count(*[_type == "post" && references(^._id)]),
++  }
++`;
++
++// Guide pages for listings. Guides keep their category as free text.
++export const guidesListQuery = groq`
++  *[_type == "guidePage" && defined(slug.current)] | order(publishedAt desc) {
++    _id,
++    _updatedAt,
++    title,
++    subtitle,
++    category,
++    readTime,
++    publishedAt,
++    "slug": slug.current,
+   }
+ `;
+ 
+@@ -47,6 +76,7 @@ export const featuredPostQuery = groq`
+     publishedAt,
+     excerpt,
+     mainImage,
++    "wordCount": length(string::split(pt::text(body), " ")),
+     "author": author->name,
+     "categories": categories[]->title,
+   }
+@@ -73,6 +103,7 @@ export const postsByCategoryQuery = groq`
+     publishedAt,
+     excerpt,
+     mainImage,
++    "wordCount": length(string::split(pt::text(body), " ")),
+     "author": author->name,
+     "categories": categories[]->title,
+     "categorySlugs": categories[]->slug.current,
+diff --git a/sanity/queries/guidePageQuery.js b/sanity/queries/guidePageQuery.js
+index 58109be..1e08283 100644
+--- a/sanity/queries/guidePageQuery.js
++++ b/sanity/queries/guidePageQuery.js
+@@ -2,6 +2,7 @@ import { groq } from "next-sanity";
+ 
+ export const guidePageQuery = groq`
+   *[_type == "guidePage" && slug.current == $slug][0] {
++    _updatedAt,
+     title,
+     subtitle,
+     category,
+diff --git a/src/app/about/page.js b/src/app/about/page.js
+index 930ec8d..8263fcb 100644
+--- a/src/app/about/page.js
++++ b/src/app/about/page.js
+@@ -1,8 +1,98 @@
+ import Link from "next/link";
+-import { canonicalUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
++import { client } from "../../../sanity/lib/client";
++import { categoriesWithCountQuery } from "../../../sanity/lib/queries";
++import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
++import {
++  breadcrumbJsonLd,
++  canonicalUrl,
++  DEFAULT_OG_IMAGE,
++  jsonLd,
++  SITE_NAME,
++  SITE_URL,
++} from "@/lib/seo";
++
++export const revalidate = 60;
++
++// ─── Edit these before publishing ────────────────────────────────────────────
++// Public details about the person behind the site. Everything on this page that
++// speaks in the first person comes from here, so it is easy to adjust.
++const AUTHOR = {
++  name: "Jazz",
++  role: "Founder & writer",
++  location: "Melbourne, Australia",
++  bio: [
++    "I'm a web developer based in Melbourne. Before building this site I worked on the administrative and compliance side of international student services at Australian education providers, where the same questions came up again and again: how many hours can I work, how do I get a TFN, what does my lease actually mean, how do I get my tax back?",
++    "International Student Tips is where I answer those questions properly, in plain English, with links to the official source so you can check for yourself.",
++  ],
++};
++
++// Add a public contact address here to show it on the page, e.g. "hello@internationalstudenttips.com.au"
++const CONTACT_EMAIL = null;
++
++const SOCIALS = [
++  {
++    label: "Facebook",
++    href: "https://www.facebook.com/profile.php?id=61572900125280",
++  },
++  {
++    label: "Instagram",
++    href: "https://www.instagram.com/internationalstudenttips/",
++  },
++  {
++    label: "TikTok",
++    href: "https://www.tiktok.com/@internationalstudenttips",
++  },
++];
++
++const OFFICIAL_SOURCES = [
++  {
++    name: "Department of Home Affairs",
++    use: "Student visa rules, conditions and updates",
++    href: "https://immi.homeaffairs.gov.au",
++  },
++  {
++    name: "Australian Taxation Office",
++    use: "Tax file numbers, tax returns and residency for tax",
++    href: "https://www.ato.gov.au",
++  },
++  {
++    name: "Fair Work Ombudsman",
++    use: "Pay rates, work rights and workplace complaints",
++    href: "https://www.fairwork.gov.au",
++  },
++  {
++    name: "Study Australia",
++    use: "Official study information from the Australian Government",
++    href: "https://www.studyaustralia.gov.au",
++  },
++  {
++    name: "Moneysmart",
++    use: "Independent money guidance from ASIC",
++    href: "https://moneysmart.gov.au",
++  },
++];
++
++const STANDARDS = [
++  {
++    title: "Plain English first",
++    text: "Government pages are accurate but hard to read, especially in your second language. We explain what a rule means for you, then link to the official page for the exact wording.",
++  },
++  {
++    title: "Official sources, linked",
++    text: "Guides on visas, tax and work rights point back to the government source they are based on, so you can verify anything before you act on it.",
++  },
++  {
++    title: "Dated and updated",
++    text: "Articles show when they were published and, where we have edited them, when they were last updated. Visa and tax rules change, so always check the date.",
++  },
++  {
++    title: "Honest about what we are",
++    text: "We are a free student resource, not a government body, a university or a migration agency. If we ever include sponsored content or affiliate links, we will label them clearly.",
++  },
++];
+ 
+ const description =
+-  "Learn about International Student Tips and our practical guides for international students living and studying in Australia.";
++  "International Student Tips is a free, plain-English resource for international students in Australia, covering visas, work rights, housing, banking, tax and student life.";
+ 
+ export const metadata = {
+   title: "About Us",
+@@ -19,131 +109,308 @@ export const metadata = {
+   },
+   twitter: {
+     card: "summary_large_image",
++    title: "About International Student Tips",
++    description,
+     images: [DEFAULT_OG_IMAGE],
+   },
+ };
+ 
+-export default function AboutPage() {
++export default async function AboutPage() {
++  const categories = await client.fetch(categoriesWithCountQuery);
++
++  const aboutSchema = jsonLd({
++    "@context": "https://schema.org",
++    "@type": "AboutPage",
++    name: "About International Student Tips",
++    url: canonicalUrl("/about"),
++    description,
++    inLanguage: "en-AU",
++    mainEntity: {
++      "@type": "Organization",
++      name: SITE_NAME,
++      url: SITE_URL,
++      founder: { "@type": "Person", name: AUTHOR.name },
++      areaServed: { "@type": "Country", name: "Australia" },
++      audience: {
++        "@type": "Audience",
++        audienceType: "International students in Australia",
++      },
++    },
++  });
++
+   return (
+-    <div className="max-w-3xl mx-auto px-6 py-16">
+-      {/* Header */}
+-      <div className="mb-12">
+-        <span className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest">
+-          About
+-        </span>
+-        <h1 className="text-4xl font-medium text-gray-900 mt-2 mb-5">
+-          Helping international students thrive in Australia
+-        </h1>
+-        <p className="text-lg text-gray-500 leading-relaxed">
+-          IST Blogs is a practical resource for international students
+-          navigating life in Australia — from visa rules and work rights to
+-          housing, banking, and building a life here.
+-        </p>
+-      </div>
++    <>
++      <script
++        type="application/ld+json"
++        dangerouslySetInnerHTML={{ __html: aboutSchema }}
++      />
++      <script
++        type="application/ld+json"
++        dangerouslySetInnerHTML={{
++          __html: breadcrumbJsonLd([
++            { name: "Home", url: canonicalUrl("/") },
++            { name: "About", url: canonicalUrl("/about") },
++          ]),
++        }}
++      />
+ 
+-      {/* Story Section */}
+-      <div className="border-t border-gray-100 pt-10 mb-10">
+-        <h2 className="text-2xl font-medium text-gray-900 mb-4">
+-          Why this blog exists
+-        </h2>
+-        <p className="text-gray-600 leading-relaxed mb-4">
+-          Moving to Australia as an international student is exciting — but it
+-          comes with a lot of questions that nobody seems to answer clearly.
+-          What are your actual work rights? How do you get a TFN? Which bank is
+-          actually good for students? How do you do a tax return?
+-        </p>
+-        <p className="text-gray-600 leading-relaxed mb-4">
+-          This blog exists to answer those questions honestly, in plain English,
+-          so you can focus on your studies and enjoy your time in Australia.
+-        </p>
+-        <p className="text-gray-600 leading-relaxed">
+-          Every guide is written from real experience — not copied from
+-          government websites.
+-        </p>
+-      </div>
++      {/* Hero */}
++      <section className="bg-white border-b border-gray-100">
++        <div className="max-w-3xl mx-auto px-6 py-16">
++          <span className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest">
++            About
++          </span>
++          <h1 className="text-4xl md:text-5xl font-medium text-gray-900 mt-2 mb-5 leading-tight">
++            Helping international students thrive in Australia
++          </h1>
++          <p className="text-lg text-gray-500 leading-relaxed">
++            International Student Tips is a free, plain-English resource for
++            students who have moved to Australia to study. We cover visas, work
++            rights, housing, banking, tax and everyday life, so you can spend
++            less time decoding rules and more time on your studies.
++          </p>
++        </div>
++      </section>
+ 
+-      {/* What We Cover */}
+-      <div className="border-t border-gray-100 pt-10 mb-10">
+-        <h2 className="text-2xl font-medium text-gray-900 mb-6">
+-          What we cover
+-        </h2>
+-        <div className="grid md:grid-cols-2 gap-4">
+-          {[
+-            {
+-              emoji: "📋",
+-              topic: "Visa & Immigration",
+-              desc: "Work hours, bridging visas, renewals and conditions explained simply.",
+-            },
+-            {
+-              emoji: "💼",
+-              topic: "Work Rights",
+-              desc: "TFN, ABN, minimum wage, your rights as a student worker.",
+-            },
+-            {
+-              emoji: "🏠",
+-              topic: "Housing",
+-              desc: "Finding share houses, understanding leases, tenant rights.",
+-            },
+-            {
+-              emoji: "🏦",
+-              topic: "Banking",
+-              desc: "Best accounts for students, how to open one, sending money home.",
+-            },
+-            {
+-              emoji: "💰",
+-              topic: "Tax & Money",
+-              desc: "How to do your tax return and get back what you are owed.",
+-            },
+-            {
+-              emoji: "🎓",
+-              topic: "University Life",
+-              desc: "Academic culture, plagiarism rules, making the most of uni.",
+-            },
+-            {
+-              emoji: "🛂",
+-              topic: "PR Pathways",
+-              desc: "Options for staying in Australia after you graduate.",
+-            },
+-            {
+-              emoji: "🌏",
+-              topic: "Life in Australia",
+-              desc: "Healthcare, transport, culture and settling in.",
+-            },
+-          ].map((item) => (
++      <div className="max-w-3xl mx-auto px-6">
++        {/* Why */}
++        <section className="py-12 border-b border-gray-100">
++          <h2 className="text-2xl font-medium text-gray-900 mb-4">
++            Why this site exists
++          </h2>
++          <p className="text-gray-600 leading-relaxed mb-4">
++            Moving to Australia as an international student is exciting, but it
++            comes with a long list of questions that nobody seems to answer
++            clearly. What are your actual work rights? How do you get a TFN?
++            Which bank is a good fit for a student? How do you lodge a tax
++            return? What should you check before signing a lease?
++          </p>
++          <p className="text-gray-600 leading-relaxed">
++            The answers are usually out there, spread across government sites,
++            university pages and social media posts of mixed quality. We pull
++            them together, explain them in plain English, and point you to the
++            official source for the details that matter.
++          </p>
++        </section>
++
++        {/* Author */}
++        <section className="py-12 border-b border-gray-100">
++          <h2 className="text-2xl font-medium text-gray-900 mb-6">
++            Who is behind it
++          </h2>
++          <div className="flex flex-col sm:flex-row gap-6 rounded-2xl border border-gray-100 bg-gray-50 p-6">
+             <div
+-              key={item.topic}
+-              className="flex gap-4 p-4 rounded-xl border border-gray-100"
++              aria-hidden="true"
++              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--brand-green)] text-2xl font-medium text-white"
+             >
+-              <span className="text-2xl">{item.emoji}</span>
+-              <div>
+-                <h3 className="text-sm font-medium text-gray-800 mb-1">
+-                  {item.topic}
++              {AUTHOR.name.charAt(0)}
++            </div>
++            <div>
++              <p className="text-base font-medium text-gray-900">
++                {AUTHOR.name}
++              </p>
++              <p className="text-sm text-gray-400 mb-3">
++                {AUTHOR.role} · {AUTHOR.location}
++              </p>
++              {AUTHOR.bio.map((paragraph) => (
++                <p
++                  key={paragraph.slice(0, 24)}
++                  className="text-gray-600 leading-relaxed mb-3 last:mb-0"
++                >
++                  {paragraph}
++                </p>
++              ))}
++            </div>
++          </div>
++        </section>
++
++        {/* Standards */}
++        <section className="py-12 border-b border-gray-100">
++          <h2 className="text-2xl font-medium text-gray-900 mb-2">
++            How we write our guides
++          </h2>
++          <p className="text-gray-500 mb-6">
++            Guidance on visas, tax and money can affect real decisions, so we
++            hold every guide to the same standards.
++          </p>
++          <div className="grid sm:grid-cols-2 gap-4">
++            {STANDARDS.map((item) => (
++              <div
++                key={item.title}
++                className="rounded-xl border border-gray-100 p-5"
++              >
++                <h3 className="text-sm font-medium text-gray-900 mb-2">
++                  {item.title}
+                 </h3>
+                 <p className="text-sm text-gray-500 leading-relaxed">
+-                  {item.desc}
++                  {item.text}
+                 </p>
+               </div>
++            ))}
++          </div>
++        </section>
++
++        {/* Official sources */}
++        <section className="py-12 border-b border-gray-100">
++          <h2 className="text-2xl font-medium text-gray-900 mb-2">
++            Official sources we rely on
++          </h2>
++          <p className="text-gray-500 mb-6">
++            When in doubt, go straight to the source. These are the websites our
++            guides most often point back to.
++          </p>
++          <ul className="divide-y divide-gray-100 rounded-xl border border-gray-100">
++            {OFFICIAL_SOURCES.map((source) => (
++              <li
++                key={source.name}
++                className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
++              >
++                <div>
++                  <p className="text-sm font-medium text-gray-900">
++                    {source.name}
++                  </p>
++                  <p className="text-sm text-gray-500">{source.use}</p>
++                </div>
++                <a
++                  href={source.href}
++                  target="_blank"
++                  rel="noopener noreferrer"
++                  className="text-sm font-medium text-[var(--brand-green)] hover:underline"
++                >
++                  Visit site →
++                </a>
++              </li>
++            ))}
++          </ul>
++        </section>
++
++        {/* Topics */}
++        <section className="py-12 border-b border-gray-100">
++          <h2 className="text-2xl font-medium text-gray-900 mb-2">
++            What we cover
++          </h2>
++          <p className="text-gray-500 mb-6">
++            Pick a topic to see every guide on it.
++          </p>
++          <div className="grid md:grid-cols-2 gap-4">
++            {categories.map((cat) => (
++              <Link
++                key={cat._id}
++                href={`/blog/category/${cat.slug}`}
++                className="group rounded-xl border border-gray-100 p-5 transition-colors hover:border-[var(--brand-green)]"
++              >
++                <div className="flex items-start justify-between gap-3">
++                  <h3 className="text-sm font-medium text-gray-900 group-hover:text-[var(--brand-green)]">
++                    {cat.title}
++                  </h3>
++                  {cat.postCount > 0 && (
++                    <span className="shrink-0 text-xs text-gray-400">
++                      {cat.postCount}{" "}
++                      {cat.postCount === 1 ? "article" : "articles"}
++                    </span>
++                  )}
++                </div>
++                {cat.description && (
++                  <p className="mt-2 text-sm leading-relaxed text-gray-500">
++                    {cat.description}
++                  </p>
++                )}
++              </Link>
++            ))}
++          </div>
++        </section>
++
++        {/* Tools */}
++        <section className="py-12 border-b border-gray-100">
++          <h2 className="text-2xl font-medium text-gray-900 mb-2">
++            Free tools
++          </h2>
++          <p className="text-gray-500 mb-6">
++            Alongside the guides, we build simple calculators for the decisions
++            students ask about most.
++          </p>
++          <Link
++            href="/tools/rent-checker"
++            className="group flex items-center justify-between gap-4 rounded-xl border border-gray-100 p-5 transition-colors hover:border-[var(--brand-green)]"
++          >
++            <div>
++              <p className="text-sm font-medium text-gray-900 group-hover:text-[var(--brand-green)]">
++                Rent affordability checker
++              </p>
++              <p className="text-sm text-gray-500">
++                See whether a rent fits your income in each major city.
++              </p>
+             </div>
+-          ))}
+-        </div>
+-      </div>
++            <span className="text-sm font-medium text-[var(--brand-green)]">
++              Try it →
++            </span>
++          </Link>
++        </section>
+ 
+-      {/* CTA */}
+-      <div className="border-t border-gray-100 pt-10">
+-        <h2 className="text-2xl font-medium text-gray-900 mb-4">
+-          Start reading
+-        </h2>
+-        <p className="text-gray-600 leading-relaxed mb-6">
+-          Browse our latest guides or jump straight to the topic you need help
+-          with right now.
+-        </p>
+-        <Link
+-          href="/blog"
+-          className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
++        {/* Disclaimer */}
++        <section
++          id="disclaimer"
++          className="scroll-mt-24 py-12 border-b border-gray-100"
+         >
+-          Browse all guides
+-        </Link>
++          <h2 className="text-2xl font-medium text-gray-900 mb-4">
++            Important notice
++          </h2>
++          <div className="rounded-xl border-l-4 border-amber-400 bg-amber-50 px-5 py-4 text-sm leading-relaxed text-amber-900">
++            <p className="mb-3">
++              The content on this site is general information only. It is not
++              migration, legal, tax or financial advice, and it does not take
++              your personal circumstances into account.
++            </p>
++            <p className="mb-3">
++              Visa, tax and work rules change, sometimes quickly. Always check
++              the official source linked in each guide, and look at the
++              published and updated dates on the article.
++            </p>
++            <p>
++              For advice about your own visa, speak to a registered migration
++              agent or the Department of Home Affairs. For tax, speak to a
++              registered tax agent or the ATO. For concerns about your
++              education provider, contact them directly or use the complaint
++              pathways they are required to provide.
++            </p>
++          </div>
++        </section>
++
++        {/* Contact */}
++        <section className="py-12">
++          <h2 className="text-2xl font-medium text-gray-900 mb-4">
++            Get in touch
++          </h2>
++          <p className="text-gray-600 leading-relaxed mb-5">
++            Spotted something out of date, or have a topic you would like us to
++            cover? We read every message and use them to decide what to write
++            and update next.
++          </p>
++          <div className="flex flex-wrap items-center gap-3">
++            {CONTACT_EMAIL && (
++              <a
++                href={`mailto:${CONTACT_EMAIL}`}
++                className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
++              >
++                Email us
++              </a>
++            )}
++            {SOCIALS.map((social) => (
++              <a
++                key={social.label}
++                href={social.href}
++                target="_blank"
++                rel="noopener noreferrer"
++                className="rounded-lg border border-gray-200 px-5 py-3 text-sm text-gray-600 transition-colors hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
++              >
++                {social.label}
++              </a>
++            ))}
++          </div>
++        </section>
+       </div>
+-    </div>
++
++      <NewsletterBanner />
++    </>
+   );
+ }
+diff --git a/src/app/blog/[slug]/page.js b/src/app/blog/[slug]/page.js
+index 904c70b..e07e64e 100644
+--- a/src/app/blog/[slug]/page.js
++++ b/src/app/blog/[slug]/page.js
+@@ -32,6 +32,7 @@ import {
+   descriptionFrom,
+   keywordList,
+   portableTextToText,
++  readTimeLabel,
+   SITE_NAME,
+ } from "@/lib/seo";
+ 
+@@ -178,8 +179,9 @@ const portableTextComponents = {
+           <div className="relative w-full h-96 rounded-2xl overflow-hidden">
+             <Image
+               src={urlFor(value).width(1200).height(800).url()}
+-              alt={value.alt || "Blog image"}
++              alt={value.alt || value.caption || ""}
+               fill
++              sizes="(min-width: 768px) 768px, 100vw"
+               className="object-cover"
+             />
+           </div>
+@@ -288,10 +290,12 @@ const portableTextComponents = {
+     normal: ({ children }) => (
+       <p className="text-gray-700 leading-relaxed mb-5 text-lg">{children}</p>
+     ),
++    // The page title is already the <h1>; an h1 inside the body renders as <h2>
++    // so there is only ever one H1 per page.
+     h1: ({ children }) => (
+-      <h1 className="text-3xl font-medium text-gray-900 mt-10 mb-4">
++      <h2 className="text-3xl font-medium text-gray-900 mt-10 mb-4">
+         {children}
+-      </h1>
++      </h2>
+     ),
+     h2: ({ children }) => (
+       <h2 className="text-2xl font-medium text-gray-900 mt-10 mb-4">
+@@ -375,6 +379,13 @@ function BlogPost({ post }) {
+   const image = post.mainImage
+     ? urlFor(post.mainImage).width(1200).height(630).url()
+     : DEFAULT_OG_IMAGE.url;
++  const readTime = readTimeLabel(post.wordCount);
++
++  // Only show "Updated" when the post was edited at least a day after publishing
++  const showUpdated =
++    post._updatedAt &&
++    post.publishedAt &&
++    new Date(post._updatedAt) - new Date(post.publishedAt) > 24 * 60 * 60 * 1000;
+ 
+   return (
+     <>
+@@ -387,8 +398,10 @@ function BlogPost({ post }) {
+             description,
+             url: canonical,
+             datePublished: post.publishedAt,
++            dateModified: post._updatedAt,
+             image,
+             author: post.author,
++            authorUrl: canonicalUrl("/about"),
+           }),
+         }}
+       />
+@@ -418,24 +431,47 @@ function BlogPost({ post }) {
+           <h1 className="text-4xl font-medium text-gray-900 leading-tight mb-5">
+             {post.title}
+           </h1>
+-          <div className="flex items-center gap-4 text-sm text-gray-400">
+-            {post.author && <span>By {post.author}</span>}
++          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
++            {post.author && (
++              <span>
++                By{" "}
++                <Link href="/about" className="hover:text-[var(--brand-green)]">
++                  {post.author}
++                </Link>
++              </span>
++            )}
+             {post.publishedAt && (
+               <>
+                 <span>·</span>
+-                <span>{formatDate(post.publishedAt)}</span>
++                <time dateTime={post.publishedAt}>
++                  {formatDate(post.publishedAt)}
++                </time>
++              </>
++            )}
++            {showUpdated && (
++              <>
++                <span>·</span>
++                <time dateTime={post._updatedAt}>
++                  Updated {formatDate(post._updatedAt)}
++                </time>
++              </>
++            )}
++            {readTime && (
++              <>
++                <span>·</span>
++                <span>{readTime}</span>
+               </>
+             )}
+-            <span>·</span>
+-            <span>5 min read</span>
+           </div>
+         </div>
+         <div className="relative w-full h-72 rounded-2xl overflow-hidden mb-12 bg-[var(--brand-green-light)]">
+           {post.mainImage ? (
+             <Image
+               src={urlFor(post.mainImage).width(1200).height(600).url()}
+-              alt={post.title}
++              alt={post.mainImage.alt || post.title}
+               fill
++              priority
++              sizes="(min-width: 768px) 768px, 100vw"
+               className="object-cover"
+             />
+           ) : (
+@@ -458,6 +494,18 @@ function BlogPost({ post }) {
+ 
+       <div className="max-w-3xl mx-auto px-6 ">
+         <div className="border-t border-gray-100 pt-8">
++          <p className="mb-6 rounded-xl bg-gray-50 px-5 py-4 text-sm leading-relaxed text-gray-500">
++            This article is general information for international students, not
++            migration, legal, tax or financial advice. Rules change, so check
++            the official source before you act.{" "}
++            <Link
++              href="/about#disclaimer"
++              className="text-[var(--brand-green)] underline underline-offset-2"
++            >
++              How we write and check our guides
++            </Link>
++            .
++          </p>
+           <Link
+             href="/blog"
+             className="inline-flex items-center gap-2 text-sm border border-[var(--brand-green)] text-[var(--brand-green)] px-5 py-2.5 rounded-lg hover:bg-[var(--brand-green)] hover:text-white transition-colors"
+@@ -494,6 +542,8 @@ function GuidePage({ guide }) {
+             description,
+             url: canonical,
+             datePublished: guide.publishedAt,
++            dateModified: guide._updatedAt,
++            image: DEFAULT_OG_IMAGE.url,
+           }),
+         }}
+       />
+diff --git a/src/app/blog/category/[slug]/page.js b/src/app/blog/category/[slug]/page.js
+index daaa8e7..be813ad 100644
+--- a/src/app/blog/category/[slug]/page.js
++++ b/src/app/blog/category/[slug]/page.js
+@@ -12,6 +12,7 @@ import {
+   breadcrumbJsonLd,
+   canonicalUrl,
+   DEFAULT_OG_IMAGE,
++  readTimeLabel,
+ } from "@/lib/seo";
+ 
+ export const revalidate = 60;
+@@ -58,6 +59,8 @@ export async function generateMetadata({ params }) {
+     },
+     twitter: {
+       card: "summary_large_image",
++      title,
++      description,
+       images: [DEFAULT_OG_IMAGE],
+     },
+   };
+@@ -169,8 +172,9 @@ export default async function CategoryPage({ params }) {
+                   {post.mainImage ? (
+                     <Image
+                       src={urlFor(post.mainImage).width(600).height(400).url()}
+-                      alt={post.title}
++                      alt={post.mainImage.alt || post.title}
+                       fill
++                      sizes="(min-width: 768px) 33vw, 100vw"
+                       className="object-cover"
+                     />
+                   ) : (
+@@ -194,8 +198,12 @@ export default async function CategoryPage({ params }) {
+                     </p>
+                   )}
+                   <p className="text-xs text-gray-400">
+-                    {post.publishedAt && formatDate(post.publishedAt)} · 5 min
+-                    read
++                    {[
++                      post.publishedAt && formatDate(post.publishedAt),
++                      readTimeLabel(post.wordCount),
++                    ]
++                      .filter(Boolean)
++                      .join(" · ")}
+                   </p>
+                 </div>
+               </Link>
+diff --git a/src/app/blog/page.js b/src/app/blog/page.js
+index 6c40e4e..ee4f34b 100644
+--- a/src/app/blog/page.js
++++ b/src/app/blog/page.js
+@@ -1,8 +1,18 @@
+ import Link from "next/link";
+ import { client } from "../../../sanity/lib/client";
+-import { postsQuery, categoriesQuery } from "../../../sanity/lib/queries";
++import {
++  postsQuery,
++  categoriesQuery,
++  guidesListQuery,
++} from "../../../sanity/lib/queries";
+ import BlogPostGrid from "@/components/blog/BlogPostGrid";
+-import { canonicalUrl, DEFAULT_OG_IMAGE } from "@/lib/seo";
++import GuideCard from "@/components/blog/GuideCard";
++import {
++  breadcrumbJsonLd,
++  canonicalUrl,
++  DEFAULT_OG_IMAGE,
++  jsonLd,
++} from "@/lib/seo";
+ 
+ export const revalidate = 60;
+ 
+@@ -24,70 +34,119 @@ export const metadata = {
+   },
+   twitter: {
+     card: "summary_large_image",
++    title: "Student Guides & Tips",
++    description,
+     images: [DEFAULT_OG_IMAGE],
+   },
+ };
+ 
+-export default async function BlogPage({ searchParams }) {
+-  const resolvedParams = await searchParams;
+-  const selectedCategory = resolvedParams?.category || "";
+-
+-  const [allPosts, categories] = await Promise.all([
++// Note: category filtering now lives on /blog/category/[slug]. Old
++// /blog?category=... links are redirected there in next.config.mjs, so this
++// page no longer reads searchParams and can be statically rendered.
++export default async function BlogPage() {
++  const [posts, categories, guides] = await Promise.all([
+     client.fetch(postsQuery),
+     client.fetch(categoriesQuery),
++    client.fetch(guidesListQuery),
+   ]);
+ 
+-  const posts = selectedCategory
+-    ? allPosts.filter((post) => post.categorySlugs?.includes(selectedCategory))
+-    : allPosts;
++  const listItems = [
++    ...guides.map((guide) => canonicalUrl(`/blog/${guide.slug}`)),
++    ...posts.map((post) => canonicalUrl(`/blog/${post.slug.current}`)),
++  ];
+ 
+   return (
+-    <div className="max-w-6xl mx-auto px-6 py-16">
+-      {/* Header */}
+-      <div className="mb-10">
+-        <span className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest">
+-          {selectedCategory ? "Filtered Posts" : "All Posts"}
+-        </span>
+-        <h1 className="text-4xl font-medium text-gray-900 mt-2 mb-4">
+-          {selectedCategory
+-            ? categories.find((c) => c.slug === selectedCategory)?.title ||
+-              "Posts"
+-            : "Guides & Tips"}
+-        </h1>
+-        <p className="text-gray-500 max-w-xl">
+-          Everything you need to know about living and studying in Australia as
+-          an international student.
+-        </p>
+-      </div>
++    <>
++      <script
++        type="application/ld+json"
++        dangerouslySetInnerHTML={{
++          __html: breadcrumbJsonLd([
++            { name: "Home", url: canonicalUrl("/") },
++            { name: "Blog", url: canonicalUrl("/blog") },
++          ]),
++        }}
++      />
++      <script
++        type="application/ld+json"
++        dangerouslySetInnerHTML={{
++          __html: jsonLd({
++            "@context": "https://schema.org",
++            "@type": "CollectionPage",
++            name: "Student Guides & Tips",
++            description,
++            url: canonicalUrl("/blog"),
++            mainEntity: {
++              "@type": "ItemList",
++              itemListElement: listItems.slice(0, 50).map((url, index) => ({
++                "@type": "ListItem",
++                position: index + 1,
++                url,
++              })),
++            },
++          }),
++        }}
++      />
+ 
+-      {/* Category Filter Pills */}
+-      <div className="flex gap-2 flex-wrap mb-10">
+-        <Link
+-          href="/blog"
+-          className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
+-            !selectedCategory
+-              ? "border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
+-              : "border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
+-          }`}
+-        >
+-          All
+-        </Link>
+-        {categories.map((cat) => (
++      <div className="max-w-6xl mx-auto px-6 py-16">
++        {/* Header */}
++        <div className="mb-10">
++          <span className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest">
++            All Posts
++          </span>
++          <h1 className="text-4xl font-medium text-gray-900 mt-2 mb-4">
++            Guides &amp; Tips
++          </h1>
++          <p className="text-gray-500 max-w-xl">
++            Everything you need to know about living and studying in Australia
++            as an international student.
++          </p>
++        </div>
++
++        {/* Category pills (link to clean category pages) */}
++        <div className="flex gap-2 flex-wrap mb-12">
+           <Link
+-            key={cat._id}
+-            href={`/blog/category/${cat.slug}`}
+-            className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${
+-              selectedCategory === cat.slug
+-                ? "border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
+-                : "border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)]"
+-            }`}
++            href="/blog"
++            className="text-sm px-4 py-1.5 rounded-full border border-[var(--brand-green)] text-[var(--brand-green)] bg-[var(--brand-green-light)]"
+           >
+-            {cat.title}
++            All
+           </Link>
+-        ))}
+-      </div>
++          {categories.map((cat) => (
++            <Link
++              key={cat._id}
++              href={`/blog/category/${cat.slug}`}
++              className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
++            >
++              {cat.title}
++            </Link>
++          ))}
++        </div>
+ 
+-      <BlogPostGrid posts={posts} />
+-    </div>
++        {/* Complete guides */}
++        {guides.length > 0 && (
++          <section className="mb-16">
++            <h2 className="text-2xl font-medium text-gray-900 mb-2">
++              Complete guides
++            </h2>
++            <p className="text-gray-500 mb-6 max-w-2xl">
++              In-depth, step-by-step guides you can work through from start to
++              finish.
++            </p>
++            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
++              {guides.map((guide) => (
++                <GuideCard key={guide._id} guide={guide} />
++              ))}
++            </div>
++          </section>
++        )}
++
++        {/* Posts */}
++        <section>
++          <h2 className="text-2xl font-medium text-gray-900 mb-6">
++            Latest articles
++          </h2>
++          <BlogPostGrid posts={posts} />
++        </section>
++      </div>
++    </>
+   );
+ }
+diff --git a/src/app/layout.js b/src/app/layout.js
+index 0cfe45a..882281b 100644
+--- a/src/app/layout.js
++++ b/src/app/layout.js
+@@ -1,9 +1,10 @@
+ import { Geist } from "next/font/google";
++import Script from "next/script";
+ import "./globals.css";
+ import Navbar from "@/components/Navbar";
+ import Footer from "@/components/Footer";
+ import { client } from "../../sanity/lib/client";
+-import { settingsQuery } from "../../sanity/lib/queries";
++import { settingsQuery, categoriesQuery } from "../../sanity/lib/queries";
+ import { SpeedInsights } from "@vercel/speed-insights/next";
+ import {
+   canonicalUrl,
+@@ -13,10 +14,14 @@ import {
+   organizationJsonLd,
+   SITE_NAME,
+   SITE_URL,
++  websiteJsonLd,
+ } from "@/lib/seo";
+ 
+ const geist = Geist({ subsets: ["latin"] });
+ 
++const GA_ID = "G-5FSDSPEZC9";
++const CLARITY_ID = "tue38alcfi";
++
+ export const viewport = {
+   themeColor: "#048442",
+ };
+@@ -72,46 +77,51 @@ export async function generateMetadata() {
+ }
+ 
+ export default async function RootLayout({ children }) {
+-  const settings = await client.fetch(settingsQuery);
++  const [settings, categories] = await Promise.all([
++    client.fetch(settingsQuery),
++    client.fetch(categoriesQuery),
++  ]);
+ 
+   return (
+-    <html lang="en">
++    <html lang="en-AU">
+       <head>
+         <script
+           type="application/ld+json"
+           dangerouslySetInnerHTML={{ __html: organizationJsonLd() }}
+         />
+         <script
+-          async
+-          src="https://www.googletagmanager.com/gtag/js?id=G-5FSDSPEZC9"
+-        />
+-        <script
+-          dangerouslySetInnerHTML={{
+-            __html: `
+-              window.dataLayer = window.dataLayer || [];
+-              function gtag(){dataLayer.push(arguments);}
+-              gtag('js', new Date());
+-              gtag('config', 'G-5FSDSPEZC9');
+-            `,
+-          }}
+-        />
+-        <script
+-          dangerouslySetInnerHTML={{
+-            __html: `
+-      (function(c,l,a,r,i,t,y){
+-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+-      })(window, document, "clarity", "script", "tue38alcfi");
+-    `,
+-          }}
++          type="application/ld+json"
++          dangerouslySetInnerHTML={{ __html: websiteJsonLd() }}
+         />
+       </head>
+       <body className={geist.className}>
+         <Navbar />
+         <main>{children}</main>
+-        <Footer settings={settings} />
++        <Footer settings={settings} categories={categories} />
+         <SpeedInsights />
++
++        {/* Analytics load after the page is interactive so they never block rendering */}
++        <Script
++          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
++          strategy="afterInteractive"
++        />
++        <Script id="ga-init" strategy="afterInteractive">
++          {`
++            window.dataLayer = window.dataLayer || [];
++            function gtag(){dataLayer.push(arguments);}
++            gtag('js', new Date());
++            gtag('config', '${GA_ID}');
++          `}
++        </Script>
++        <Script id="clarity-init" strategy="afterInteractive">
++          {`
++            (function(c,l,a,r,i,t,y){
++              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
++              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
++              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
++            })(window, document, "clarity", "script", "${CLARITY_ID}");
++          `}
++        </Script>
+       </body>
+     </html>
+   );
+diff --git a/src/app/page.js b/src/app/page.js
+index 33e118f..6622e9c 100644
+--- a/src/app/page.js
++++ b/src/app/page.js
+@@ -3,14 +3,41 @@ import Image from "next/image";
+ import { client } from "../../sanity/lib/client";
+ import {
+   postsQuery,
+-  categoriesQuery,
++  categoriesWithCountQuery,
+   featuredPostQuery,
+   settingsQuery,
++  guidesListQuery,
+ } from "../../sanity/lib/queries";
+ import { urlFor } from "../../sanity/lib/image";
+ import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
++import GuideCard from "@/components/blog/GuideCard";
++import { readTimeLabel } from "@/lib/seo";
++
+ export const revalidate = 60;
+ 
++const FAQS = [
++  {
++    q: "Is International Student Tips free?",
++    a: "Yes. Every guide and tool on the site is free to read and use. There is no sign-up needed, although you can join our newsletter if you want new guides sent to your inbox.",
++  },
++  {
++    q: "Is this migration or legal advice?",
++    a: "No. Our guides are general information to help you understand the basics. They do not take your personal circumstances into account. For advice about your own visa, speak to a registered migration agent or the Department of Home Affairs.",
++  },
++  {
++    q: "Where does the information come from?",
++    a: "We base our guides on official sources such as the Department of Home Affairs, the Australian Taxation Office and the Fair Work Ombudsman, and we link to them so you can check the details yourself.",
++  },
++  {
++    q: "How do I know a guide is still current?",
++    a: "Each article shows when it was published and, where it has been edited, when it was last updated. Visa, tax and work rules can change quickly, so always confirm with the official source before you act.",
++  },
++  {
++    q: "Can I suggest a topic?",
++    a: "Please do. Use the contact links on our About page to tell us what you are struggling to find answers on. Student questions decide what we write and update next.",
++  },
++];
++
+ function formatDate(dateString) {
+   return new Date(dateString).toLocaleDateString("en-AU", {
+     year: "numeric",
+@@ -19,21 +46,55 @@ function formatDate(dateString) {
+   });
+ }
+ 
++function SectionHeading({ eyebrow, title, intro }) {
++  return (
++    <div className="mb-8 max-w-2xl">
++      {eyebrow && (
++        <p className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest mb-2">
++          {eyebrow}
++        </p>
++      )}
++      <h2 className="text-2xl md:text-3xl font-medium text-gray-900">{title}</h2>
++      {intro && <p className="mt-3 text-gray-500 leading-relaxed">{intro}</p>}
++    </div>
++  );
++}
++
+ export default async function Home() {
+-  const [posts, categories, featuredPost, settings] = await Promise.all([
+-    client.fetch(postsQuery),
+-    client.fetch(categoriesQuery),
+-    client.fetch(featuredPostQuery),
+-    client.fetch(settingsQuery),
+-  ]);
++  const [posts, categories, featuredPost, settings, guides] = await Promise.all(
++    [
++      client.fetch(postsQuery),
++      client.fetch(categoriesWithCountQuery),
++      client.fetch(featuredPostQuery),
++      client.fetch(settingsQuery),
++      client.fetch(guidesListQuery),
++    ],
++  );
+ 
+   const heroPost = featuredPost || posts[0];
+-  const sidePosts = posts.filter((p) => p._id !== heroPost?._id).slice(0, 3);
+-  const recentPosts = posts.filter((p) => p._id !== heroPost?._id).slice(0, 6);
++  const otherPosts = posts.filter((p) => p._id !== heroPost?._id);
++  const sidePosts = otherPosts.slice(0, 3);
++  // Latest grid continues after the side list so no post appears twice
++  const recentPosts = otherPosts.slice(3, 9);
++  const startGuides = guides.slice(0, 3);
++
++  const totalContent = posts.length + guides.length;
++  const trustStats = [
++    totalContent > 0 && {
++      value: `${totalContent}`,
++      label: totalContent === 1 ? "guide & article" : "guides & articles",
++    },
++    categories.length > 0 && {
++      value: `${categories.length}`,
++      label: "topics covered",
++    },
++    { value: "Official", label: "sources linked" },
++    { value: "Free", label: "to read, always" },
++  ].filter(Boolean);
+ 
+   return (
+     <div>
+-      {/* Hero Section */}
++      {/* Hero */}
+       <section className="bg-white border-b border-gray-100">
+         <div className="max-w-6xl mx-auto px-6 py-20">
+           <div className="max-w-2xl">
+@@ -48,49 +109,101 @@ export default async function Home() {
+               {settings?.heroSubtext ||
+                 "Practical guides on visa rules, work rights, housing, banking and everything you need to thrive as an international student."}
+             </p>
+-            <Link
+-              href={"/blog/international-student-guide-explore-australia"}
+-              prefetch={false}
+-              className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
+-            >
+-              {settings?.heroButtonText || "Browse all guides"}
+-            </Link>
++            <div className="flex flex-wrap gap-3">
++              <Link
++                href="/blog"
++                className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
++              >
++                {settings?.heroButtonText || "Browse all guides"}
++              </Link>
++              <Link
++                href="/tools/rent-checker"
++                className="inline-block border border-gray-200 text-gray-700 text-sm px-6 py-3 rounded-lg hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
++              >
++                Try the rent checker
++              </Link>
++            </div>
+           </div>
+         </div>
+       </section>
+ 
+-      <NewsletterBanner />
+-
+-      {/* Topics Pills */}
+-      <section className="border-b border-gray-100 bg-white">
+-        <div className="max-w-6xl mx-auto px-6 py-5">
+-          <div className="flex gap-2 flex-wrap">
+-            <Link
+-              href="/blog"
+-              className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
+-            >
+-              All
+-            </Link>
+-            {categories.map((cat) => (
+-              <Link
+-                key={cat._id}
+-                href={`/blog/category/${cat.slug}`}
+-                className="text-sm px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
+-              >
+-                {cat.title}
+-              </Link>
++      {/* Trust strip (counts come straight from the CMS) */}
++      <section className="border-b border-gray-100 bg-gray-50">
++        <div className="max-w-6xl mx-auto px-6 py-6">
++          <dl className="grid grid-cols-2 gap-6 md:grid-cols-4">
++            {trustStats.map((stat) => (
++              <div key={stat.label}>
++                <dt className="sr-only">{stat.label}</dt>
++                <dd>
++                  <span className="block text-2xl font-medium text-[var(--brand-green)]">
++                    {stat.value}
++                  </span>
++                  <span className="text-sm text-gray-500">{stat.label}</span>
++                </dd>
++              </div>
+             ))}
+-          </div>
++          </dl>
+         </div>
+       </section>
+ 
+-      <div className="max-w-6xl mx-auto px-6 py-16">
+-        {/* Featured Post */}
++      <div className="max-w-6xl mx-auto px-6">
++        {/* Start here: complete guides */}
++        {startGuides.length > 0 && (
++          <section className="pt-16">
++            <SectionHeading
++              eyebrow="Start here"
++              title="Complete guides"
++              intro="New to Australia, or tackling something big? These in-depth guides walk you through it step by step."
++            />
++            <div className="grid gap-6 md:grid-cols-3">
++              {startGuides.map((guide, i) => (
++                <GuideCard
++                  key={guide._id}
++                  guide={guide}
++                  variant={i === 0 ? "featured" : "default"}
++                />
++              ))}
++            </div>
++          </section>
++        )}
++
++        {/* Browse by topic */}
++        {categories.length > 0 && (
++          <section className="pt-16">
++            <SectionHeading
++              eyebrow="Browse by topic"
++              title="Find answers by what you need"
++              intro="Every guide is filed under a topic, so you can go straight to visas, work rights, housing, money or student life."
++            />
++            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
++              {categories.map((cat) => (
++                <Link
++                  key={cat._id}
++                  href={`/blog/category/${cat.slug}`}
++                  className="group flex flex-col rounded-2xl border border-gray-100 p-5 transition-colors hover:border-[var(--brand-green)]"
++                >
++                  <h3 className="text-base font-medium text-gray-900 group-hover:text-[var(--brand-green)]">
++                    {cat.title}
++                  </h3>
++                  {cat.description && (
++                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-500">
++                      {cat.description}
++                    </p>
++                  )}
++                  <p className="mt-auto pt-4 text-xs text-gray-400">
++                    {cat.postCount}{" "}
++                    {cat.postCount === 1 ? "article" : "articles"}
++                  </p>
++                </Link>
++              ))}
++            </div>
++          </section>
++        )}
++
++        {/* Featured post */}
+         {heroPost && (
+-          <section className="mb-16">
+-            <p className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest mb-4">
+-              Featured
+-            </p>
++          <section className="pt-16">
++            <SectionHeading eyebrow="Featured" title="Read this first" />
+             <div className="grid md:grid-cols-2 gap-8">
+               <Link href={`/blog/${heroPost.slug.current}`} className="group">
+                 <div className="relative bg-[var(--brand-green-light)] rounded-2xl h-64 overflow-hidden mb-5">
+@@ -100,8 +213,9 @@ export default async function Home() {
+                         .width(800)
+                         .height(500)
+                         .url()}
+-                      alt={heroPost.title}
++                      alt={heroPost.mainImage.alt || heroPost.title}
+                       fill
++                      sizes="(min-width: 768px) 50vw, 100vw"
+                       className="object-cover"
+                     />
+                   ) : (
+@@ -117,21 +231,25 @@ export default async function Home() {
+                     </span>
+                   )}
+                 </div>
+-                <h2 className="text-2xl font-medium text-gray-900 leading-snug mb-3 group-hover:text-[var(--brand-green)] transition-colors">
++                <h3 className="text-2xl font-medium text-gray-900 leading-snug mb-3 group-hover:text-[var(--brand-green)] transition-colors">
+                   {heroPost.title}
+-                </h2>
++                </h3>
+                 {heroPost.excerpt && (
+                   <p className="text-gray-500 leading-relaxed text-sm mb-3">
+                     {heroPost.excerpt}
+                   </p>
+                 )}
+                 <p className="text-xs text-gray-400">
+-                  {heroPost.publishedAt && formatDate(heroPost.publishedAt)} · 5
+-                  min read
++                  {[
++                    heroPost.publishedAt && formatDate(heroPost.publishedAt),
++                    readTimeLabel(heroPost.wordCount),
++                  ]
++                    .filter(Boolean)
++                    .join(" · ")}
+                 </p>
+               </Link>
+ 
+-              {/* Side Posts */}
++              {/* Side posts */}
+               <div className="flex flex-col gap-5">
+                 {sidePosts.map((post, i) => (
+                   <Link
+@@ -151,7 +269,11 @@ export default async function Home() {
+                       <h3 className="text-sm font-medium text-gray-800 leading-snug mt-1 group-hover:text-[var(--brand-green)] transition-colors">
+                         {post.title}
+                       </h3>
+-                      <p className="text-xs text-gray-400 mt-1">5 min read</p>
++                      {readTimeLabel(post.wordCount) && (
++                        <p className="text-xs text-gray-400 mt-1">
++                          {readTimeLabel(post.wordCount)}
++                        </p>
++                      )}
+                     </div>
+                   </Link>
+                 ))}
+@@ -160,83 +282,173 @@ export default async function Home() {
+           </section>
+         )}
+ 
+-        {/* Recent Posts Grid */}
+-        <section>
+-          <p className="text-xs font-medium text-[var(--brand-green)] uppercase tracking-widest mb-4">
+-            Latest Posts
+-          </p>
+-          <h2 className="text-2xl font-medium text-gray-900 mb-8">
+-            Fresh from the blog
+-          </h2>
+-          <div className="grid md:grid-cols-3 gap-6">
+-            {recentPosts.map((post) => (
+-              <Link
+-                key={post._id}
+-                href={`/blog/${post.slug.current}`}
+-                className="group border border-gray-100 rounded-2xl overflow-hidden hover:border-[var(--brand-green)] transition-colors"
+-              >
+-                <div className="relative bg-[var(--brand-green-light)] h-44 overflow-hidden">
+-                  {post.mainImage ? (
+-                    <Image
+-                      src={urlFor(post.mainImage).width(600).height(400).url()}
+-                      alt={post.title}
+-                      fill
+-                      className="object-cover"
+-                    />
+-                  ) : (
+-                    <div className="h-full flex items-center justify-center">
+-                      <span className="text-4xl">📝</span>
+-                    </div>
+-                  )}
+-                </div>
+-                <div className="p-5">
+-                  {post.categories?.[0] && (
+-                    <span className="text-xs font-medium text-[var(--brand-green)]">
+-                      {post.categories[0]}
+-                    </span>
+-                  )}
+-                  <h3 className="text-base font-medium text-gray-800 leading-snug mt-1 mb-3 group-hover:text-[var(--brand-green)] transition-colors">
+-                    {post.title}
+-                  </h3>
+-                  <p className="text-xs text-gray-400">
+-                    {post.publishedAt && formatDate(post.publishedAt)} · 5 min
+-                    read
+-                  </p>
+-                </div>
+-              </Link>
+-            ))}
+-          </div>
++        {/* Latest posts */}
++        {recentPosts.length > 0 && (
++          <section className="pt-16">
++            <SectionHeading
++              eyebrow="Latest posts"
++              title="Fresh from the blog"
++            />
++            <div className="grid md:grid-cols-3 gap-6">
++              {recentPosts.map((post) => (
++                <Link
++                  key={post._id}
++                  href={`/blog/${post.slug.current}`}
++                  className="group border border-gray-100 rounded-2xl overflow-hidden hover:border-[var(--brand-green)] transition-colors"
++                >
++                  <div className="relative bg-[var(--brand-green-light)] h-44 overflow-hidden">
++                    {post.mainImage ? (
++                      <Image
++                        src={urlFor(post.mainImage)
++                          .width(600)
++                          .height(400)
++                          .url()}
++                        alt={post.mainImage.alt || post.title}
++                        fill
++                        sizes="(min-width: 768px) 33vw, 100vw"
++                        className="object-cover"
++                      />
++                    ) : (
++                      <div className="h-full flex items-center justify-center">
++                        <span className="text-4xl">📝</span>
++                      </div>
++                    )}
++                  </div>
++                  <div className="p-5">
++                    {post.categories?.[0] && (
++                      <span className="text-xs font-medium text-[var(--brand-green)]">
++                        {post.categories[0]}
++                      </span>
++                    )}
++                    <h3 className="text-base font-medium text-gray-800 leading-snug mt-1 mb-3 group-hover:text-[var(--brand-green)] transition-colors">
++                      {post.title}
++                    </h3>
++                    <p className="text-xs text-gray-400">
++                      {[
++                        post.publishedAt && formatDate(post.publishedAt),
++                        readTimeLabel(post.wordCount),
++                      ]
++                        .filter(Boolean)
++                        .join(" · ")}
++                    </p>
++                  </div>
++                </Link>
++              ))}
++            </div>
+ 
+-          {posts.length > 4 && (
+             <div className="text-center mt-12">
+               <Link
+                 href="/blog"
+                 className="inline-block border border-[var(--brand-green)] text-[var(--brand-green)] text-sm px-6 py-3 rounded-lg hover:bg-[var(--brand-green)] hover:text-white transition-colors"
+               >
+-                View all posts
++                View all guides &amp; posts
+               </Link>
+             </div>
+-          )}
+-        </section>
++          </section>
++        )}
+ 
+-        <section className="bg-sky-700 my-6 py-10 rounded-2xl">
+-          <div className="grid md:grid-cols-2 sm:grid-cols-1 justify-between  items-center gap-5 px-6 py-2">
+-            <div className="">
+-              <h2 className="text-2xl/7 font-bold text-white  sm:text-3xl ">
+-                Rent Affordability Calculator for International Students
+-              </h2>
+-            </div>
+-            <div className="md:text-right sm:text-center ">
++        {/* Tool */}
++        <section className="pt-16">
++          <div className="rounded-2xl bg-[var(--brand-green)] px-6 py-10 md:px-10">
++            <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
++              <div>
++                <p className="text-xs font-medium uppercase tracking-widest text-white/70 mb-2">
++                  Free tool
++                </p>
++                <h2 className="text-2xl font-medium text-white md:text-3xl">
++                  Can you afford the rent?
++                </h2>
++                <p className="mt-3 max-w-xl text-white/80 leading-relaxed">
++                  Enter your weekly income and rent to see how it compares with
++                  the common 30% guideline, and with typical rents in each major
++                  city.
++                </p>
++              </div>
+               <Link
+                 href="/tools/rent-checker"
+-                className="bg-white hover:bg-white-700  text-green font-green py-2 px-4 rounded hover:font-green"
++                className="inline-block rounded-lg bg-white px-6 py-3 text-sm font-medium text-[var(--brand-green)] transition-colors hover:bg-white/90"
+               >
+-                Check your rent affordability →
++                Check your rent →
+               </Link>
+             </div>
+           </div>
+         </section>
++
++        {/* Why trust us */}
++        <section className="pt-16">
++          <SectionHeading
++            eyebrow="Why students use us"
++            title="Clear answers you can check"
++            intro="Advice about visas, tax and money has to be reliable. Here is how we try to earn your trust."
++          />
++          <div className="grid gap-4 md:grid-cols-3">
++            {[
++              {
++                title: "Plain English",
++                text: "We explain what the rules mean for you, without legal jargon.",
++              },
++              {
++                title: "Official sources, linked",
++                text: "Our guides point to the government pages they are based on so you can verify everything.",
++              },
++              {
++                title: "Dated and open about limits",
++                text: "Articles show when they were published or updated, and we are clear that this is general information, not advice.",
++              },
++            ].map((item) => (
++              <div
++                key={item.title}
++                className="rounded-2xl border border-gray-100 p-6"
++              >
++                <h3 className="text-base font-medium text-gray-900 mb-2">
++                  {item.title}
++                </h3>
++                <p className="text-sm leading-relaxed text-gray-500">
++                  {item.text}
++                </p>
++              </div>
++            ))}
++          </div>
++          <p className="mt-6 text-sm text-gray-500">
++            Want to know more?{" "}
++            <Link
++              href="/about"
++              className="font-medium text-[var(--brand-green)] hover:underline"
++            >
++              See how we write our guides →
++            </Link>
++          </p>
++        </section>
++
++        {/* FAQ */}
++        <section className="pt-16 pb-16">
++          <SectionHeading
++            eyebrow="FAQ"
++            title="Common questions"
++            intro="A few quick answers about the site."
++          />
++          <div className="max-w-3xl divide-y divide-gray-100 rounded-2xl border border-gray-100">
++            {FAQS.map((item) => (
++              <details key={item.q} className="group px-5 py-4">
++                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-gray-900">
++                  {item.q}
++                  <span
++                    aria-hidden="true"
++                    className="text-[var(--brand-green)] transition-transform group-open:rotate-45"
++                  >
++                    +
++                  </span>
++                </summary>
++                <p className="mt-3 text-sm leading-relaxed text-gray-500">
++                  {item.a}
++                </p>
++              </details>
++            ))}
++          </div>
++        </section>
+       </div>
++
++      <NewsletterBanner />
+     </div>
+   );
+ }
+diff --git a/src/components/Footer.js b/src/components/Footer.js
+index 8db44b9..37ddc35 100644
+--- a/src/components/Footer.js
++++ b/src/components/Footer.js
+@@ -24,7 +24,15 @@ function Spinner() {
+   );
+ }
+ 
+-export default function Footer({ settings }) {
++const FALLBACK_TOPICS = [
++  { slug: "visa-and-immigration", title: "Visa & Immigration" },
++  { slug: "housing", title: "Housing" },
++  { slug: "banking", title: "Banking" },
++  { slug: "tax-and-money", title: "Tax & Money" },
++];
++
++export default function Footer({ settings, categories }) {
++  const topics = categories?.length ? categories : FALLBACK_TOPICS;
+   const {
+     firstName,
+     email,
+@@ -117,7 +125,12 @@ export default function Footer({ settings }) {
+         <div className="max-w-6xl mx-auto px-6 py-12">
+           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+             <div>
+-              <Image src="/logo.png" alt="IST Blogs" width={120} height={52} />
++              <Image
++                src="/logo.png"
++                alt="International Student Tips"
++                width={120}
++                height={52}
++              />
+               <p className="text-sm text-gray-500 mt-3 max-w-xs">
+                 {settings?.footerTagline ||
+                   "Helping international students thrive in Australia with practical, honest guides."}
+@@ -162,30 +175,15 @@ export default function Footer({ settings }) {
+                   Topics
+                 </h4>
+                 <div className="flex flex-col gap-2">
+-                  <Link
+-                    href="/blog/category/visa-and-immigration"
+-                    className="text-sm text-gray-500 hover:text-[#048442]"
+-                  >
+-                    Visa & Work
+-                  </Link>
+-                  <Link
+-                    href="/blog/category/housing"
+-                    className="text-sm text-gray-500 hover:text-[#048442]"
+-                  >
+-                    Housing
+-                  </Link>
+-                  <Link
+-                    href="/blog/category/banking"
+-                    className="text-sm text-gray-500 hover:text-[#048442]"
+-                  >
+-                    Banking
+-                  </Link>
+-                  <Link
+-                    href="/blog/category/tax-and-money"
+-                    className="text-sm text-gray-500 hover:text-[#048442]"
+-                  >
+-                    Tax & Money
+-                  </Link>
++                  {topics.map((topic) => (
++                    <Link
++                      key={topic.slug}
++                      href={`/blog/category/${topic.slug}`}
++                      className="text-sm text-gray-500 hover:text-[#048442]"
++                    >
++                      {topic.title}
++                    </Link>
++                  ))}
+                 </div>
+               </div>
+               <div>
+@@ -220,6 +218,16 @@ export default function Footer({ settings }) {
+             </div>
+           </div>
+           <div className="border-t border-gray-100 mt-10 pt-6 text-sm text-gray-400">
++            <p className="mb-3 max-w-3xl text-xs leading-relaxed text-gray-400">
++              Our guides are general information for international students, not
++              migration, legal, tax or financial advice. Rules change, so always
++              check the official source or speak to a registered professional
++              before making decisions.{" "}
++              <Link href="/about#disclaimer" className="underline">
++                Read our full notice
++              </Link>
++              .
++            </p>
+             © {new Date().getFullYear()} International Student Tips. All rights
+             reserved.
+           </div>
+diff --git a/src/components/Navbar.js b/src/components/Navbar.js
+index b28787a..b01bb38 100644
+--- a/src/components/Navbar.js
++++ b/src/components/Navbar.js
+@@ -15,7 +15,7 @@ export default function Navbar() {
+           <Link href="/">
+             <Image
+               src="/logo.png"
+-              alt="IST Blogs"
++              alt="International Student Tips"
+               width={140}
+               height={60}
+               priority
+diff --git a/src/components/blog/BlogPostGrid.jsx b/src/components/blog/BlogPostGrid.jsx
+index 5599388..1baf874 100644
+--- a/src/components/blog/BlogPostGrid.jsx
++++ b/src/components/blog/BlogPostGrid.jsx
+@@ -4,6 +4,7 @@ import { useState } from "react";
+ import Link from "next/link";
+ import Image from "next/image";
+ import { urlFor } from "../../../sanity/lib/image";
++import { readTimeLabel } from "@/lib/seo";
+ 
+ const INITIAL_COUNT = 10;
+ 
+@@ -49,8 +50,9 @@ export default function BlogPostGrid({ posts }) {
+               {post.mainImage ? (
+                 <Image
+                   src={urlFor(post.mainImage).width(600).height(400).url()}
+-                  alt={post.title}
++                  alt={post.mainImage.alt || post.title}
+                   fill
++                  sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                   className="object-cover"
+                 />
+               ) : (
+@@ -76,7 +78,12 @@ export default function BlogPostGrid({ posts }) {
+                 </p>
+               )}
+               <p className="text-xs text-gray-400">
+-                {post.publishedAt && formatDate(post.publishedAt)} · 5 min read
++                {[
++                  post.publishedAt && formatDate(post.publishedAt),
++                  readTimeLabel(post.wordCount),
++                ]
++                  .filter(Boolean)
++                  .join(" · ")}
+               </p>
+             </div>
+           </Link>
+diff --git a/src/lib/seo.js b/src/lib/seo.js
+index 89f50dd..dcc3f50 100644
+--- a/src/lib/seo.js
++++ b/src/lib/seo.js
+@@ -96,14 +96,41 @@ export function organizationJsonLd() {
+   });
+ }
+ 
++/**
++ * Estimated reading time in minutes from a word count (200 wpm).
++ * Returns null when the count is unknown so callers can hide the label.
++ */
++export function readMinutes(wordCount) {
++  if (!wordCount || Number.isNaN(Number(wordCount))) return null;
++  return Math.max(1, Math.ceil(Number(wordCount) / 200));
++}
++
++export function readTimeLabel(wordCount) {
++  const minutes = readMinutes(wordCount);
++  return minutes ? `${minutes} min read` : null;
++}
++
++export function websiteJsonLd() {
++  return jsonLd({
++    "@context": "https://schema.org",
++    "@type": "WebSite",
++    name: SITE_NAME,
++    url: SITE_URL,
++    inLanguage: "en-AU",
++    publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
++  });
++}
++
+ export function articleJsonLd({
+   type = "Article",
+   title,
+   description,
+   url,
+   datePublished,
++  dateModified,
+   image,
+   author,
++  authorUrl,
+ }) {
+   const schema = {
+     "@context": "https://schema.org",
+@@ -128,9 +155,19 @@ export function articleJsonLd({
+     },
+   };
+ 
++  schema.inLanguage = "en-AU";
+   if (datePublished) schema.datePublished = datePublished;
++  if (dateModified || datePublished) {
++    schema.dateModified = dateModified || datePublished;
++  }
+   if (image) schema.image = image;
+-  if (author) schema.author = { "@type": "Person", name: author };
++  if (author) {
++    schema.author = {
++      "@type": "Person",
++      name: author,
++      ...(authorUrl ? { url: authorUrl } : {}),
++    };
++  }
+ 
+   return jsonLd(schema);
+ }
+diff --git a/src/app/not-found.js b/src/app/not-found.js
+new file mode 100644
+index 0000000..52d3fdb
+--- /dev/null
++++ b/src/app/not-found.js
+@@ -0,0 +1,46 @@
++import Link from "next/link";
++
++export const metadata = {
++  title: "Page not found",
++  robots: { index: false, follow: true },
++};
++
++const popular = [
++  { href: "/blog", label: "Browse all guides" },
++  { href: "/tools/rent-checker", label: "Rent affordability checker" },
++  { href: "/about", label: "About International Student Tips" },
++];
++
++export default function NotFound() {
++  return (
++    <div className="max-w-2xl mx-auto px-6 py-24 text-center">
++      <p className="text-sm font-medium text-[var(--brand-green)] uppercase tracking-widest mb-3">
++        404
++      </p>
++      <h1 className="text-4xl font-medium text-gray-900 mb-4">
++        We can&apos;t find that page
++      </h1>
++      <p className="text-gray-500 leading-relaxed mb-10">
++        The link may be old or the guide may have moved. Try one of these
++        instead, or head back to the home page.
++      </p>
++      <div className="flex flex-col gap-3 items-center mb-10">
++        {popular.map((item) => (
++          <Link
++            key={item.href}
++            href={item.href}
++            className="w-full max-w-sm rounded-lg border border-gray-200 px-5 py-3 text-sm text-gray-700 hover:border-[var(--brand-green)] hover:text-[var(--brand-green)] transition-colors"
++          >
++            {item.label}
++          </Link>
++        ))}
++      </div>
++      <Link
++        href="/"
++        className="inline-block bg-[var(--brand-green)] text-white text-sm px-6 py-3 rounded-lg hover:bg-green-800 transition-colors"
++      >
++        Back to home
++      </Link>
++    </div>
++  );
++}
+diff --git a/src/components/blog/GuideCard.jsx b/src/components/blog/GuideCard.jsx
+new file mode 100644
+index 0000000..9114544
+--- /dev/null
++++ b/src/components/blog/GuideCard.jsx
+@@ -0,0 +1,45 @@
++import Link from "next/link";
++
++/**
++ * Card for a long-form "guide page" (the structured, sectioned guides).
++ * Guides live at /blog/[slug] alongside regular posts.
++ */
++export default function GuideCard({ guide, variant = "default" }) {
++  const featured = variant === "featured";
++
++  return (
++    <Link
++      href={`/blog/${guide.slug}`}
++      className={`group flex flex-col rounded-2xl border transition-all hover:shadow-sm ${
++        featured
++          ? "border-[var(--brand-green)]/30 bg-[var(--brand-green-light)] p-6 hover:border-[var(--brand-green)]"
++          : "border-gray-100 bg-white p-6 hover:border-[var(--brand-green)]"
++      }`}
++    >
++      <div className="mb-3 flex items-center gap-2">
++        <span className="rounded-full bg-[var(--brand-green)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-white">
++          Complete guide
++        </span>
++        {guide.category && (
++          <span className="text-xs font-medium text-[var(--brand-green)]">
++            {guide.category}
++          </span>
++        )}
++      </div>
++      <h3 className="text-lg font-medium leading-snug text-gray-900 transition-colors group-hover:text-[var(--brand-green)]">
++        {guide.title}
++      </h3>
++      {guide.subtitle && (
++        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-500">
++          {guide.subtitle}
++        </p>
++      )}
++      <div className="mt-auto flex items-center justify-between pt-4 text-xs text-gray-400">
++        <span>{guide.readTime || ""}</span>
++        <span className="font-medium text-[var(--brand-green)]">
++          Read the guide →
++        </span>
++      </div>
++    </Link>
++  );
++}
+diff --git a/src/proxy.js b/src/proxy.js
+new file mode 100644
+index 0000000..5976eab
+--- /dev/null
++++ b/src/proxy.js
+@@ -0,0 +1,23 @@
++import { NextResponse } from "next/server";
++
++// Old filter URLs like /blog?category=housing now live at
++// /blog/category/housing. Redirecting here (rather than reading searchParams in
++// the page) keeps /blog fully static and gives one canonical URL per topic.
++export function proxy(request) {
++  const { searchParams } = request.nextUrl;
++  const category = searchParams.get("category");
++
++  if (category === null) return NextResponse.next();
++
++  const url = request.nextUrl.clone();
++  url.search = "";
++  url.pathname = /^[a-z0-9-]+$/i.test(category)
++    ? `/blog/category/${category.toLowerCase()}`
++    : "/blog";
++
++  return NextResponse.redirect(url, 308);
++}
++
++export const config = {
++  matcher: "/blog",
++};

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { urlFor } from "../../../sanity/lib/image";
+import { readTimeLabel } from "@/lib/seo";
 
 const INITIAL_COUNT = 10;
 
@@ -49,8 +50,9 @@ export default function BlogPostGrid({ posts }) {
               {post.mainImage ? (
                 <Image
                   src={urlFor(post.mainImage).width(600).height(400).url()}
-                  alt={post.title}
+                  alt={post.mainImage.alt || post.title}
                   fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                   className="object-cover"
                 />
               ) : (
@@ -76,7 +78,12 @@ export default function BlogPostGrid({ posts }) {
                 </p>
               )}
               <p className="text-xs text-gray-400">
-                {post.publishedAt && formatDate(post.publishedAt)} · 5 min read
+                {[
+                  post.publishedAt && formatDate(post.publishedAt),
+                  readTimeLabel(post.wordCount),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
           </Link>

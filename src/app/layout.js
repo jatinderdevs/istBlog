@@ -1,9 +1,10 @@
 import { Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { client } from "../../sanity/lib/client";
-import { settingsQuery } from "../../sanity/lib/queries";
+import { settingsQuery, categoriesQuery } from "../../sanity/lib/queries";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import {
   canonicalUrl,
@@ -13,9 +14,13 @@ import {
   organizationJsonLd,
   SITE_NAME,
   SITE_URL,
+  websiteJsonLd,
 } from "@/lib/seo";
 
 const geist = Geist({ subsets: ["latin"] });
+
+const GA_ID = "G-5FSDSPEZC9";
+const CLARITY_ID = "tue38alcfi";
 
 export const viewport = {
   themeColor: "#048442",
@@ -72,46 +77,51 @@ export async function generateMetadata() {
 }
 
 export default async function RootLayout({ children }) {
-  const settings = await client.fetch(settingsQuery);
+  const [settings, categories] = await Promise.all([
+    client.fetch(settingsQuery),
+    client.fetch(categoriesQuery),
+  ]);
 
   return (
-    <html lang="en">
+    <html lang="en-AU">
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: organizationJsonLd() }}
         />
         <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-5FSDSPEZC9"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-5FSDSPEZC9');
-            `,
-          }}
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-      (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "tue38alcfi");
-    `,
-          }}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: websiteJsonLd() }}
         />
       </head>
       <body className={geist.className}>
         <Navbar />
         <main>{children}</main>
-        <Footer settings={settings} />
+        <Footer settings={settings} categories={categories} />
         <SpeedInsights />
+
+        {/* Analytics load after the page is interactive so they never block rendering */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}');
+          `}
+        </Script>
+        <Script id="clarity-init" strategy="afterInteractive">
+          {`
+            (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "${CLARITY_ID}");
+          `}
+        </Script>
       </body>
     </html>
   );
