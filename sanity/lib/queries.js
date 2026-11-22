@@ -36,6 +36,9 @@ export const postQuery = groq`
     "author": author->name,
     "authorSlug": author->slug.current,
     "authorRole": author->role,
+    "authorImage": author->image,
+    "authorCredentials": author->credentials,
+    "authorBioText": pt::text(author->bio[0]),
     "categories": categories[]->title,
     "categorySlugs": categories[]->slug.current,
   }

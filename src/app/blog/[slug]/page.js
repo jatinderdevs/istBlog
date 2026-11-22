@@ -27,6 +27,7 @@ import CityTabBlock from "@/components/blog/CityTabBlock";
 import NewsletterInline from "@/components/newsletter/NewsletterInline";
 import FinalCTA from "@/components/blog/FinalCTA";
 import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
+import AuthorBox from "@/components/blog/AuthorBox";
 import {
   articleJsonLd,
   breadcrumbJsonLd,
@@ -449,6 +450,10 @@ function BlogPost({ post, related = [] }) {
             image,
             author: post.author,
             authorUrl: canonicalUrl(authorPath),
+            authorImage: post.authorImage
+              ? urlFor(post.authorImage).width(320).height(320).url()
+              : undefined,
+            authorJobTitle: post.authorRole,
           }),
         }}
       />
@@ -624,6 +629,17 @@ function BlogPost({ post, related = [] }) {
               ))}
             </ul>
           </section>
+        )}
+
+        {post.author && (
+          <AuthorBox
+            name={post.author}
+            role={post.authorRole}
+            image={post.authorImage}
+            credentials={post.authorCredentials}
+            bioText={post.authorBioText}
+            href={authorPath}
+          />
         )}
       </div>
 

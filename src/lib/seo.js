@@ -146,6 +146,8 @@ export function articleJsonLd({
   image,
   author,
   authorUrl,
+  authorImage,
+  authorJobTitle,
 }) {
   const schema = {
     "@context": "https://schema.org",
@@ -181,6 +183,8 @@ export function articleJsonLd({
       "@type": "Person",
       name: author,
       ...(authorUrl ? { url: authorUrl } : {}),
+      ...(authorImage ? { image: authorImage } : {}),
+      ...(authorJobTitle ? { jobTitle: authorJobTitle } : {}),
     };
   }
 
