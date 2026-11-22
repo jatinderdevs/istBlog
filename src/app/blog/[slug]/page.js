@@ -654,21 +654,41 @@ function BlogPost({ post, related = [] }) {
                 <Link
                   key={item._id}
                   href={`/blog/${item.slug.current}`}
-                  className="group rounded-2xl border border-gray-100 p-5 transition-all hover:border-[var(--brand-green)] hover:shadow-sm"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 transition-all hover:border-[var(--brand-green)] hover:shadow-sm"
                 >
-                  {item.categories?.[0] && (
-                    <span className="text-xs font-medium text-[var(--brand-green)]">
-                      {item.categories[0]}
-                    </span>
-                  )}
-                  <h3 className="mt-1 text-base font-medium leading-snug text-gray-800 group-hover:text-[var(--brand-green)]">
-                    {item.title}
-                  </h3>
-                  {item.excerpt && (
-                    <p className="mt-2 line-clamp-2 text-sm text-gray-500">
-                      {item.excerpt}
-                    </p>
-                  )}
+                  <div className="relative aspect-[1200/630] w-full overflow-hidden bg-[var(--brand-green-light)]">
+                    {item.mainImage ? (
+                      <Image
+                        src={urlFor(item.mainImage).width(600).height(315).url()}
+                        alt={item.mainImage.alt || item.title}
+                        fill
+                        loading="lazy"
+                        sizes="(min-width: 640px) 352px, 100vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="text-4xl" aria-hidden="true">
+                          📖
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    {item.categories?.[0] && (
+                      <span className="text-xs font-medium text-[var(--brand-green)]">
+                        {item.categories[0]}
+                      </span>
+                    )}
+                    <h3 className="mt-1 text-base font-medium leading-snug text-gray-800 group-hover:text-[var(--brand-green)]">
+                      {item.title}
+                    </h3>
+                    {item.excerpt && (
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-500">
+                        {item.excerpt}
+                      </p>
+                    )}
+                  </div>
                 </Link>
               ))}
             </div>

@@ -9,6 +9,9 @@ import { canonicalUrl } from "@/lib/seo";
 
 export const revalidate = 60;
 
+// Must match MIN_INDEXABLE_POSTS in src/app/blog/category/[slug]/page.js
+const MIN_INDEXABLE_POSTS = 3;
+
 function withLastModified(entry, document) {
   const modified = document?._updatedAt || document?.publishedAt;
   if (!modified) return entry;
@@ -56,7 +59,11 @@ export default async function sitemap() {
     ),
   );
 
-  const categoryUrls = categories.map((category) =>
+  // Thin categories (under MIN_INDEXABLE_POSTS) are noindexed, so keep them out
+  // of the sitemap too.
+  const categoryUrls = categories
+    .filter((category) => category.postCount >= MIN_INDEXABLE_POSTS)
+    .map((category) =>
     withLastModified(
       {
         url: canonicalUrl(`/blog/category/${category.slug}`),

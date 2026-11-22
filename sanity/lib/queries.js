@@ -54,6 +54,7 @@ export const relatedPostsQuery = groq`
     title,
     slug,
     excerpt,
+    mainImage,
     "categories": categories[]->title,
   }
 `;
@@ -120,6 +121,7 @@ export const categoriesQuery = groq`
     title,
     "slug": slug.current,
     description,
+    "postCount": count(*[_type == "post" && references(^._id)]),
   }
 `;
 export const featuredPostQuery = groq`
@@ -170,6 +172,9 @@ export const categoryBySlugQuery = groq`
     title,
     "slug": slug.current,
     description,
+    seoTitle,
+    intro,
+    "postCount": count(*[_type == "post" && references(^._id)]),
   }
 `;
 

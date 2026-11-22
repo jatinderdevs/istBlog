@@ -1,3 +1,5 @@
+import { OLD_CATEGORY_REDIRECTS } from "./src/lib/categoryRedirects.mjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -105,8 +107,7 @@ const nextConfig = {
       },
       {
         source: "/category/Work-in-Australia",
-          destination: "/blog/category/work-rights",
-
+        destination: "/blog/category/jobs-and-work-rights",
         permanent: true,
       },
       {
@@ -115,6 +116,14 @@ const nextConfig = {
 
         permanent: true,
       },
+      // November 2026 category restructure: 12 categories -> 7 topic hubs
+      // (+ Melbourne). Each removed category 301s straight to its new home.
+      ...Object.entries(OLD_CATEGORY_REDIRECTS).map(([oldSlug, destination]) => ({
+        source: `/blog/category/${oldSlug}`,
+        destination,
+        statusCode: 301,
+      })),
+
       // Catch-all for any other /category/* pages
       {
         source: "/category/:slug*",

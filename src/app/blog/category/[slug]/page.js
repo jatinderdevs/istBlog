@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { PortableText } from "@portabletext/react";
 import { client } from "../../../../../sanity/lib/client";
 import {
   categoriesQuery,
@@ -16,6 +17,51 @@ import {
 } from "@/lib/seo";
 
 export const revalidate = 60;
+
+// Categories with fewer posts than this are noindexed (and left out of the
+// sitemap) so Google never sees thin topic pages. Keep in sync with sitemap.js.
+const MIN_INDEXABLE_POSTS = 3;
+
+const introComponents = {
+  block: {
+    normal: ({ children }) => (
+      <p className="text-base text-gray-600 leading-relaxed mb-4">{children}</p>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl font-medium text-gray-900 mt-6 mb-3">{children}</h2>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc pl-5 mb-4 space-y-1 text-gray-600">{children}</ul>
+    ),
+  },
+  marks: {
+    link: ({ value, children }) => {
+      const href = value?.href || "#";
+      const isInternal =
+        href.startsWith("/") ||
+        href.includes("internationalstudenttips.com.au");
+      return isInternal ? (
+        <Link
+          href={href.replace(/^https?:\/\/(www\.)?internationalstudenttips\.com\.au/, "") || "/"}
+          className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
+        >
+          {children}
+        </Link>
+      ) : (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
+        >
+          {children}
+        </a>
+      );
+    },
+  },
+};
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("en-AU", {
@@ -39,7 +85,8 @@ export async function generateMetadata({ params }) {
   if (!category) return { robots: { index: false, follow: false } };
 
   const url = canonicalUrl(`/blog/category/${slug}`);
-  const title = `${category.title} Guides`;
+  const title = category.seoTitle?.trim() || `${category.title} Guides`;
+  const indexable = (category.postCount ?? 0) >= MIN_INDEXABLE_POSTS;
   const description =
     category.description?.trim() ||
     `${category.title} guides for international students in Australia.`;
@@ -47,6 +94,7 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
+    ...(indexable ? {} : { robots: { index: false, follow: true } }),
     alternates: {
       canonical: url,
     },
@@ -129,7 +177,9 @@ export default async function CategoryPage({ params }) {
             >
               All
             </Link>
-            {allCategories.map((cat) => (
+            {allCategories
+              .filter((cat) => cat.postCount > 0 || cat.slug === slug)
+              .map((cat) => (
               <Link
                 key={cat._id}
                 href={`/blog/category/${cat.slug}`}
@@ -145,6 +195,13 @@ export default async function CategoryPage({ params }) {
           </div>
         </div>
       </section>
+
+      {/* Category intro: unique topic content so the page isn't just a list */}
+      {category.intro?.length > 0 && (
+        <section className="max-w-3xl mx-auto px-6 pt-12">
+          <PortableText value={category.intro} components={introComponents} />
+        </section>
+      )}
 
       {/* Posts Grid */}
       <div className="max-w-6xl mx-auto px-6 py-16">
