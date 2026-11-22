@@ -19,6 +19,16 @@ export async function POST(request) {
       if (body?.slug?.current) {
         revalidatePath(`/blog/${body.slug.current}`);
       }
+      // Related guides, category lists and author pages show post titles too
+      revalidatePath("/blog/[slug]", "page");
+      revalidatePath("/blog/category/[slug]", "page");
+      revalidatePath("/author/[slug]", "page");
+      revalidatePath("/sitemap.xml");
+    }
+    if (documentType === "author") {
+      revalidatePath("/author/[slug]", "page");
+      revalidatePath("/blog/[slug]", "page");
+      revalidatePath("/sitemap.xml");
     }
     if (documentType === "category") {
       revalidatePath("/blog");

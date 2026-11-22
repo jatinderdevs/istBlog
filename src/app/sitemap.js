@@ -1,5 +1,9 @@
 import { client } from "../../sanity/lib/client";
-import { postsQuery, categoriesQuery } from "../../sanity/lib/queries";
+import {
+  postsQuery,
+  categoriesQuery,
+  authorsQuery,
+} from "../../sanity/lib/queries";
 import { guidePageSlugsQuery } from "../../sanity/queries/guidePageQuery";
 import { canonicalUrl } from "@/lib/seo";
 
@@ -12,11 +16,23 @@ function withLastModified(entry, document) {
 }
 
 export default async function sitemap() {
-  const [posts, categories, guides] = await Promise.all([
+  const [posts, categories, guides, authors] = await Promise.all([
     client.fetch(postsQuery, {}, { next: { revalidate: 60 } }),
     client.fetch(categoriesQuery, {}, { next: { revalidate: 60 } }),
     client.fetch(guidePageSlugsQuery, {}, { next: { revalidate: 60 } }),
+    client.fetch(authorsQuery, {}, { next: { revalidate: 60 } }),
   ]);
+
+  const authorUrls = authors.map((author) =>
+    withLastModified(
+      {
+        url: canonicalUrl(`/author/${author.slug}`),
+        changeFrequency: "monthly",
+        priority: 0.4,
+      },
+      author,
+    ),
+  );
 
   const postUrls = posts.map((post) =>
     withLastModified(
@@ -82,6 +98,7 @@ export default async function sitemap() {
       priority: 0.5,
     },
     ...categoryUrls,
+    ...authorUrls,
     ...articleUrls,
   ];
 }

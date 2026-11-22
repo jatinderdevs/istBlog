@@ -90,6 +90,11 @@ export function organizationJsonLd() {
       height: 175,
     },
     email: CONTACT_EMAIL,
+    founder: {
+      "@type": "Person",
+      name: "Somin Byun",
+      url: `${SITE_URL}/author/somin-byun`,
+    },
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
@@ -192,5 +197,35 @@ export function breadcrumbJsonLd(items) {
       name: item.name,
       item: item.url,
     })),
+  });
+}
+
+export function faqJsonLd(items) {
+  return jsonLd({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  });
+}
+
+export function personJsonLd({ name, url, jobTitle, description, image, sameAs }) {
+  return jsonLd({
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    url,
+    mainEntity: {
+      "@type": "Person",
+      name,
+      url,
+      ...(jobTitle ? { jobTitle } : {}),
+      ...(description ? { description } : {}),
+      ...(image ? { image } : {}),
+      ...(sameAs?.length ? { sameAs } : {}),
+      worksFor: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+    },
   });
 }

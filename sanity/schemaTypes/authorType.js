@@ -19,6 +19,25 @@ export const authorType = defineType({
       },
     }),
     defineField({
+      name: 'role',
+      type: 'string',
+      description: 'e.g. "Founder & editor" — shown under the name on posts and the author page.',
+    }),
+    defineField({
+      name: 'credentials',
+      type: 'text',
+      rows: 3,
+      description:
+        'One or two lines on why readers can trust you: study/work experience in Australia, relevant roles or qualifications.',
+    }),
+    defineField({
+      name: 'sameAs',
+      title: 'Profile links',
+      type: 'array',
+      of: [defineArrayMember({type: 'url'})],
+      description: 'LinkedIn and other public profiles. Used in Person schema.',
+    }),
+    defineField({
       name: 'image',
       type: 'image',
       options: {

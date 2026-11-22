@@ -1,5 +1,9 @@
 import { client } from "../../../../sanity/lib/client";
-import { postQuery, postsQuery } from "../../../../sanity/lib/queries";
+import {
+  postQuery,
+  postsQuery,
+  relatedPostsQuery,
+} from "../../../../sanity/lib/queries";
 import {
   guidePageQuery,
   guidePageSlugsQuery,
@@ -30,6 +34,7 @@ import {
   DEFAULT_DESCRIPTION,
   DEFAULT_OG_IMAGE,
   descriptionFrom,
+  faqJsonLd,
   keywordList,
   portableTextToText,
   readTimeLabel,
@@ -62,8 +67,8 @@ export async function generateMetadata({ params }) {
 
   const post = await client.fetch(postQuery, { slug });
   if (post) {
-    const title = post.title?.trim() || SITE_NAME;
-    const description = descriptionFrom(post.excerpt, DEFAULT_DESCRIPTION);
+    const title = postSeoTitle(post);
+    const description = postDescription(post);
     const images = post.mainImage
       ? [
           {
@@ -133,6 +138,19 @@ export async function generateMetadata({ params }) {
   }
 
   return { robots: { index: false, follow: false } };
+}
+
+function postSeoTitle(post) {
+  return post.seoTitle?.trim() || post.title?.trim() || SITE_NAME;
+}
+
+// SEO description → excerpt → first paragraphs of the body, so no post
+// falls back to the generic site description.
+function postDescription(post) {
+  return descriptionFrom(
+    post.seoDescription?.trim() || post.excerpt?.trim() || post.body,
+    DEFAULT_DESCRIPTION,
+  );
 }
 
 function formatDate(dateString) {
@@ -361,7 +379,13 @@ export default async function Page({ params }) {
 
   const post = await client.fetch(postQuery, { slug });
   if (post) {
-    return <BlogPost post={post} />;
+    const related = post.categorySlugs?.length
+      ? await client.fetch(relatedPostsQuery, {
+          slug,
+          categorySlugs: post.categorySlugs.filter(Boolean),
+        })
+      : [];
+    return <BlogPost post={post} related={related || []} />;
   }
 
   const guide = await client.fetch(guidePageQuery, { slug });
@@ -372,20 +396,43 @@ export default async function Page({ params }) {
   notFound();
 }
 
-function BlogPost({ post }) {
+function BlogPost({ post, related = [] }) {
   const canonical = canonicalUrl(`/blog/${post.slug.current}`);
   const title = post.title?.trim() || SITE_NAME;
-  const description = descriptionFrom(post.excerpt, DEFAULT_DESCRIPTION);
+  const seoTitle = postSeoTitle(post);
+  const description = postDescription(post);
   const image = post.mainImage
     ? urlFor(post.mainImage).width(1200).height(630).url()
     : DEFAULT_OG_IMAGE.url;
   const readTime = readTimeLabel(post.wordCount);
+  const authorPath = post.authorSlug ? `/author/${post.authorSlug}` : "/about";
+  const categoryTitle = post.categories?.[0];
+  const categorySlug = post.categorySlugs?.[0];
+  const faq = (post.faq || []).filter((item) => item?.question && item?.answer);
+  const sources = (post.sources || []).filter((item) => item?.url);
 
-  // Only show "Updated" when the post was edited at least a day after publishing
+  // "Reviewed" wins when set; otherwise show "Updated" only when the post was
+  // edited at least a day after publishing.
+  const reviewedAt = post.lastReviewedAt;
   const showUpdated =
+    !reviewedAt &&
     post._updatedAt &&
     post.publishedAt &&
     new Date(post._updatedAt) - new Date(post.publishedAt) > 24 * 60 * 60 * 1000;
+
+  const breadcrumbs = [
+    { name: "Home", url: canonicalUrl("/") },
+    { name: "Blog", url: canonicalUrl("/blog") },
+    ...(categoryTitle && categorySlug
+      ? [
+          {
+            name: categoryTitle,
+            url: canonicalUrl(`/blog/category/${categorySlug}`),
+          },
+        ]
+      : []),
+    { name: title, url: canonical },
+  ];
 
   return (
     <>
@@ -394,40 +441,70 @@ function BlogPost({ post }) {
         dangerouslySetInnerHTML={{
           __html: articleJsonLd({
             type: "BlogPosting",
-            title,
+            title: seoTitle,
             description,
             url: canonical,
             datePublished: post.publishedAt,
-            dateModified: post._updatedAt,
+            dateModified: reviewedAt || post._updatedAt,
             image,
             author: post.author,
-            authorUrl: canonicalUrl("/about"),
+            authorUrl: canonicalUrl(authorPath),
           }),
         }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: breadcrumbJsonLd([
-            { name: "Home", url: canonicalUrl("/") },
-            { name: "Blog", url: canonicalUrl("/blog") },
-            { name: title, url: canonical },
-          ]),
-        }}
+        dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd(breadcrumbs) }}
       />
+      {faq.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: faqJsonLd(faq) }}
+        />
+      )}
       <div className="max-w-3xl mx-auto px-6 pt-16">
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[var(--brand-green)] transition-colors mb-10"
-        >
-          ← Back to all posts
-        </Link>
+        <nav aria-label="Breadcrumb" className="mb-10 text-sm text-gray-400">
+          <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <li>
+              <Link href="/" className="hover:text-[var(--brand-green)]">
+                Home
+              </Link>
+            </li>
+            <li aria-hidden="true">›</li>
+            <li>
+              <Link href="/blog" className="hover:text-[var(--brand-green)]">
+                Blog
+              </Link>
+            </li>
+            {categoryTitle && categorySlug && (
+              <>
+                <li aria-hidden="true">›</li>
+                <li>
+                  <Link
+                    href={`/blog/category/${categorySlug}`}
+                    className="hover:text-[var(--brand-green)]"
+                  >
+                    {categoryTitle}
+                  </Link>
+                </li>
+              </>
+            )}
+          </ol>
+        </nav>
         <div className="mb-10">
-          {post.categories?.[0] && (
-            <span className="inline-block text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-3 py-1 rounded-full mb-4">
-              {post.categories[0]}
-            </span>
-          )}
+          {categoryTitle &&
+            (categorySlug ? (
+              <Link
+                href={`/blog/category/${categorySlug}`}
+                className="inline-block text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-3 py-1 rounded-full mb-4 hover:opacity-80"
+              >
+                {categoryTitle}
+              </Link>
+            ) : (
+              <span className="inline-block text-xs font-medium text-[var(--brand-green)] bg-[var(--brand-green-light)] px-3 py-1 rounded-full mb-4">
+                {categoryTitle}
+              </span>
+            ))}
           <h1 className="text-4xl font-medium text-gray-900 leading-tight mb-5">
             {post.title}
           </h1>
@@ -435,9 +512,14 @@ function BlogPost({ post }) {
             {post.author && (
               <span>
                 By{" "}
-                <Link href="/about" className="hover:text-[var(--brand-green)]">
+                <Link
+                  href={authorPath}
+                  rel="author"
+                  className="hover:text-[var(--brand-green)]"
+                >
                   {post.author}
                 </Link>
+                {post.authorRole && <>, {post.authorRole}</>}
               </span>
             )}
             {post.publishedAt && (
@@ -445,6 +527,14 @@ function BlogPost({ post }) {
                 <span>·</span>
                 <time dateTime={post.publishedAt}>
                   {formatDate(post.publishedAt)}
+                </time>
+              </>
+            )}
+            {reviewedAt && (
+              <>
+                <span>·</span>
+                <time dateTime={reviewedAt}>
+                  Reviewed {formatDate(reviewedAt)}
                 </time>
               </>
             )}
@@ -490,9 +580,84 @@ function BlogPost({ post }) {
             <p className="text-gray-400">No content yet.</p>
           )}
         </article>
+
+        {faq.length > 0 && (
+          <section aria-labelledby="faq" className="mt-14">
+            <h2 id="faq" className="text-2xl font-medium text-gray-900 mb-6">
+              Frequently asked questions
+            </h2>
+            <div className="divide-y divide-gray-100 border-y border-gray-100">
+              {faq.map((item) => (
+                <details key={item._key || item.question} className="group py-4">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-lg font-medium text-gray-900">
+                    {item.question}
+                    <span className="mt-1 text-[var(--brand-green)] transition-transform group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-3 whitespace-pre-line text-base leading-relaxed text-gray-600">
+                    {item.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {sources.length > 0 && (
+          <section aria-labelledby="sources" className="mt-12">
+            <h2 id="sources" className="text-lg font-medium text-gray-900 mb-3">
+              Official sources
+            </h2>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
+              {sources.map((source) => (
+                <li key={source._key || source.url}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--brand-green)] underline underline-offset-2 hover:opacity-80"
+                  >
+                    {source.title || source.url}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 ">
+      <div className="max-w-3xl mx-auto px-6 mt-14">
+        {related.length > 0 && (
+          <section aria-labelledby="related" className="mb-12">
+            <h2 id="related" className="text-2xl font-medium text-gray-900 mb-6">
+              Related guides
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {related.map((item) => (
+                <Link
+                  key={item._id}
+                  href={`/blog/${item.slug.current}`}
+                  className="group rounded-2xl border border-gray-100 p-5 transition-all hover:border-[var(--brand-green)] hover:shadow-sm"
+                >
+                  {item.categories?.[0] && (
+                    <span className="text-xs font-medium text-[var(--brand-green)]">
+                      {item.categories[0]}
+                    </span>
+                  )}
+                  <h3 className="mt-1 text-base font-medium leading-snug text-gray-800 group-hover:text-[var(--brand-green)]">
+                    {item.title}
+                  </h3>
+                  {item.excerpt && (
+                    <p className="mt-2 line-clamp-2 text-sm text-gray-500">
+                      {item.excerpt}
+                    </p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
         <div className="border-t border-gray-100 pt-8">
           <p className="mb-6 rounded-xl bg-gray-50 px-5 py-4 text-sm leading-relaxed text-gray-500">
             This article is general information for international students, not

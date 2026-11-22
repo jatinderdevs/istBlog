@@ -14,16 +14,19 @@ import {
 
 export const revalidate = 60;
 
-// ─── Edit these before publishing ────────────────────────────────────────────
-// Public details about the person behind the site. Everything on this page that
-// speaks in the first person comes from here, so it is easy to adjust.
-const AUTHOR = {
-  name: "Jazz",
-  role: "Founder & writer",
+// ─── The person behind the site ──────────────────────────────────────────────
+// The site speaks as "we" so more writers can join later; this is the founder
+// profile shown on the About page and used in structured data. Keep it in sync
+// with the matching Author document in Sanity (slug: somin-byun).
+const FOUNDER = {
+  name: "Somin Byun",
+  role: "Founder & editor",
+  slug: "somin-byun",
   location: "Melbourne, Australia",
   bio: [
-    "I'm a web developer based in Melbourne. Before building this site I worked on the administrative and compliance side of international student services at Australian education providers, where the same questions came up again and again: how many hours can I work, how do I get a TFN, what does my lease actually mean, how do I get my tax back?",
-    "International Student Tips is where I answer those questions properly, in plain English, with links to the official source so you can check for yourself.",
+    "International Student Tips was started by Somin Byun, who moved from South Korea to Melbourne in 2023 to study a Master of Data Analytics at Monash University.",
+    "As an international student, she saw how many classmates struggled to find clear answers about work rights, visas and everyday life. Australia has a lot of student support, but the official information is often complex and hard to follow if English is not your first language.",
+    "So we write the guide we wish we had: plain English, checked against official government sources, covering your rights, your money and the fun parts of student life too. Somin still lives and works in Melbourne.",
   ],
 };
 
@@ -80,8 +83,8 @@ const STANDARDS = [
     text: "Guides on visas, tax and work rights point back to the government source they are based on, so you can verify anything before you act on it.",
   },
   {
-    title: "Dated and updated",
-    text: "Articles show when they were published and, where we have edited them, when they were last updated. Visa and tax rules change, so always check the date.",
+    title: "Dated and reviewed",
+    text: "Articles show when they were published and when we last reviewed them against the official source. Visa and tax rules change, so always check the date.",
   },
   {
     title: "Honest about what we are",
@@ -127,7 +130,14 @@ export default async function AboutPage() {
       "@type": "Organization",
       name: SITE_NAME,
       url: SITE_URL,
-      founder: { "@type": "Person", name: AUTHOR.name },
+      founder: {
+        "@type": "Person",
+        name: FOUNDER.name,
+        jobTitle: FOUNDER.role,
+        url: canonicalUrl(`/author/${FOUNDER.slug}`),
+        alumniOf: { "@type": "CollegeOrUniversity", name: "Monash University" },
+        homeLocation: { "@type": "Place", name: FOUNDER.location },
+      },
       areaServed: { "@type": "Country", name: "Australia" },
       audience: {
         "@type": "Audience",
@@ -189,6 +199,33 @@ export default async function AboutPage() {
             them together, explain them in plain English, and point you to the
             official source for the details that matter.
           </p>
+        </section>
+
+        {/* Who's behind the guides */}
+        <section id="team" className="scroll-mt-24 py-12 border-b border-gray-100">
+          <h2 className="text-2xl font-medium text-gray-900 mb-4">
+            Who&apos;s behind the guides
+          </h2>
+          <div className="rounded-xl border border-gray-100 p-6">
+            <p className="text-lg font-medium text-gray-900">{FOUNDER.name}</p>
+            <p className="text-sm text-[var(--brand-green)] mb-4">
+              {FOUNDER.role} · {FOUNDER.location}
+            </p>
+            {FOUNDER.bio.map((paragraph) => (
+              <p
+                key={paragraph.slice(0, 24)}
+                className="text-gray-600 leading-relaxed mb-4 last:mb-0"
+              >
+                {paragraph}
+              </p>
+            ))}
+            <Link
+              href={`/author/${FOUNDER.slug}`}
+              className="mt-5 inline-block text-sm font-medium text-[var(--brand-green)] hover:underline"
+            >
+              Meet {FOUNDER.name.split(" ")[0]} and read her guides →
+            </Link>
+          </div>
         </section>
 
         {/* Standards */}

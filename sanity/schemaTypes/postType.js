@@ -66,6 +66,97 @@ export const postType = defineType({
       name: "body",
       type: "blockContent",
     }),
+
+    // ---- SEO & trust (E-E-A-T) ----
+    defineField({
+      name: "seoTitle",
+      title: "SEO title",
+      type: "string",
+      group: "seo",
+      description:
+        "Title shown in Google. Aim for 50–60 characters; the site name is added automatically. Falls back to the post title.",
+      validation: (rule) =>
+        rule.max(65).warning("Over 65 characters will be cut off in Google."),
+    }),
+    defineField({
+      name: "seoDescription",
+      title: "SEO description",
+      type: "text",
+      rows: 3,
+      group: "seo",
+      description:
+        "Meta description shown in Google (120–155 characters). Falls back to the excerpt, then the first paragraph.",
+      validation: (rule) => [
+        rule.min(110).warning("Under 110 characters wastes snippet space."),
+        rule.max(160).warning("Over 160 characters will be cut off."),
+      ],
+    }),
+    defineField({
+      name: "lastReviewedAt",
+      title: "Last reviewed",
+      type: "datetime",
+      group: "seo",
+      description:
+        "Set this when you check the post against official sources. Shown as “Reviewed …” and used as the modified date for Google.",
+    }),
+    defineField({
+      name: "faq",
+      title: "FAQ",
+      type: "array",
+      group: "seo",
+      description:
+        "3–5 real questions people search (use Search Console queries). Shown at the end of the post.",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "faqItem",
+          fields: [
+            defineField({
+              name: "question",
+              type: "string",
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "answer",
+              type: "text",
+              rows: 4,
+              validation: (rule) => rule.required(),
+            }),
+          ],
+          preview: { select: { title: "question", subtitle: "answer" } },
+        }),
+      ],
+    }),
+    defineField({
+      name: "sources",
+      title: "Official sources",
+      type: "array",
+      group: "seo",
+      description:
+        "Government or official pages this post relies on (Home Affairs, ATO, Fair Work, Services Australia…).",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "sourceLink",
+          fields: [
+            defineField({
+              name: "title",
+              type: "string",
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "url",
+              type: "url",
+              validation: (rule) => rule.required(),
+            }),
+          ],
+          preview: { select: { title: "title", subtitle: "url" } },
+        }),
+      ],
+    }),
+  ],
+  groups: [
+    { name: "seo", title: "SEO & trust" },
   ],
   preview: {
     select: {

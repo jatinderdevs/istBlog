@@ -13,6 +13,41 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // Old or mistyped post slugs that still collect Google impressions
+      {
+        source: "/blog/cash-in-hand-jobs-in-australia-are-legal",
+        destination: "/blog/cash-in-hand-jobs-in-australia-are-they-legal",
+        permanent: true,
+      },
+      {
+        source: "/blog/cash-in-hand-jobs-in-australia-are-the-legal",
+        destination: "/blog/cash-in-hand-jobs-in-australia-are-they-legal",
+        permanent: true,
+      },
+      {
+        source: "/blog/how-to-see-a-doctor-as-an-international-student",
+        destination:
+          "/blog/how-to-see-a-doctor-in-australia-as-an-international-student",
+        permanent: true,
+      },
+      {
+        source: "/blog/how-to-see-a-doctor-in-australia-as-international-student",
+        destination:
+          "/blog/how-to-see-a-doctor-in-australia-as-an-international-student",
+        permanent: true,
+      },
+      {
+        source: "/blog/best-bank-account-for-international-students-in-australia",
+        destination:
+          "/blog/best-bank-account-for-international-students-in-australia-2026",
+        permanent: true,
+      },
+      {
+        source: "/blog/what-happens-if-your-visa-hours",
+        destination: "/blog/what-happens-if-you-work-more-than-your-visa-hours",
+        permanent: true,
+      },
+
       // Note: old filter URLs (/blog?category=housing) are redirected to the
       // clean category pages in src/proxy.js, which can drop the query string.
       {

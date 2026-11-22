@@ -27,10 +27,61 @@ export const postQuery = groq`
     excerpt,
     body,
     mainImage,
+    seoTitle,
+    seoDescription,
+    lastReviewedAt,
+    faq[]{ _key, question, answer },
+    sources[]{ _key, title, url },
     "wordCount": length(string::split(pt::text(body), " ")),
     "author": author->name,
+    "authorSlug": author->slug.current,
+    "authorRole": author->role,
     "categories": categories[]->title,
     "categorySlugs": categories[]->slug.current,
+  }
+`;
+
+// Up to 4 other posts sharing a category with the current post
+export const relatedPostsQuery = groq`
+  *[_type == "post"
+    && slug.current != $slug
+    && count((categories[]->slug.current)[@ in $categorySlugs]) > 0
+  ] | order(publishedAt desc) [0...4] {
+    _id,
+    title,
+    slug,
+    excerpt,
+    "categories": categories[]->title,
+  }
+`;
+
+export const authorsQuery = groq`
+  *[_type == "author" && defined(slug.current)] {
+    _updatedAt,
+    "slug": slug.current,
+  }
+`;
+
+export const authorBySlugQuery = groq`
+  *[_type == "author" && slug.current == $slug][0] {
+    _id,
+    name,
+    "slug": slug.current,
+    role,
+    credentials,
+    sameAs,
+    image,
+    bio,
+    "posts": *[_type == "post" && references(^._id)] | order(publishedAt desc) {
+      _id,
+      title,
+      slug,
+      publishedAt,
+      excerpt,
+      mainImage,
+      "wordCount": length(string::split(pt::text(body), " ")),
+      "categories": categories[]->title,
+    },
   }
 `;
 
