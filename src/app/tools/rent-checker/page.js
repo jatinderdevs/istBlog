@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { canonicalUrl, jsonLd } from "@/lib/seo";
+import NewsletterInline from "@/components/newsletter/NewsletterInline";
+import { RENT_CHECKER_OFFER } from "@/lib/newsletter";
 
 // ─── City & accommodation data ────────────────────────────────────────────────
 
@@ -414,6 +416,8 @@ export default function RentCheckerPage() {
         {/* Calculator */}
         <div className="max-w-3xl mx-auto px-6 py-10">
           <RentCalculator />
+
+          <NewsletterInline offer={RENT_CHECKER_OFFER} source="rent-checker" />
 
           {/* SEO content block 1 */}
           <div className="mt-12 prose prose-gray max-w-none">

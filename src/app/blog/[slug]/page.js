@@ -26,7 +26,8 @@ import BulletListBlock from "@/components/blog/BulletListBlock";
 import CityTabBlock from "@/components/blog/CityTabBlock";
 import NewsletterInline from "@/components/newsletter/NewsletterInline";
 import FinalCTA from "@/components/blog/FinalCTA";
-import NewsletterBanner from "@/components/newsletter/NewsletterBanner";
+import NewsletterSlideIn from "@/components/newsletter/NewsletterSlideIn";
+import { offerForCategory } from "@/lib/newsletter";
 import AuthorBox from "@/components/blog/AuthorBox";
 import {
   articleJsonLd,
@@ -375,6 +376,33 @@ const portableTextComponents = {
   },
 };
 
+// Splits a post body so a signup form can sit mid-article. It breaks just
+// before the heading closest to 40% of the way through, so lists and sections
+// are never cut. It prefers h2 (h1 in the body also renders as h2), then h3,
+// then h4. Short posts, or posts with no usable heading, get no mid-article
+// form (they still get the end-of-post form).
+const MIN_BLOCKS_FOR_MID_FORM = 8;
+const SPLIT_HEADING_LEVELS = [["h1", "h2"], ["h3"], ["h4"]];
+
+function splitBodyForSignup(body) {
+  if (!Array.isArray(body) || body.length < MIN_BLOCKS_FOR_MID_FORM) {
+    return [body, null];
+  }
+  const target = body.length * 0.4;
+  for (const styles of SPLIT_HEADING_LEVELS) {
+    let best = -1;
+    body.forEach((block, index) => {
+      const isHeading = block?._type === "block" && styles.includes(block.style);
+      if (!isHeading || index < 3 || index > body.length - 3) return;
+      if (best === -1 || Math.abs(index - target) < Math.abs(best - target)) {
+        best = index;
+      }
+    });
+    if (best !== -1) return [body.slice(0, best), body.slice(best)];
+  }
+  return [body, null];
+}
+
 export default async function Page({ params }) {
   const { slug } = await params;
 
@@ -411,6 +439,8 @@ function BlogPost({ post, related = [] }) {
   const categorySlug = post.categorySlugs?.[0];
   const faq = (post.faq || []).filter((item) => item?.question && item?.answer);
   const sources = (post.sources || []).filter((item) => item?.url);
+  const offer = offerForCategory(categorySlug);
+  const [bodyStart, bodyRest] = splitBodyForSignup(post.body);
 
   // "Reviewed" wins when set; otherwise show "Updated" only when the post was
   // edited at least a day after publishing.
@@ -577,10 +607,21 @@ function BlogPost({ post, related = [] }) {
         </div>
         <article>
           {post.body ? (
-            <PortableText
-              value={post.body}
-              components={portableTextComponents}
-            />
+            <>
+              <PortableText
+                value={bodyStart}
+                components={portableTextComponents}
+              />
+              {bodyRest && (
+                <>
+                  <NewsletterInline offer={offer} source="post-inline" />
+                  <PortableText
+                    value={bodyRest}
+                    components={portableTextComponents}
+                  />
+                </>
+              )}
+            </>
           ) : (
             <p className="text-gray-400">No content yet.</p>
           )}
@@ -630,6 +671,8 @@ function BlogPost({ post, related = [] }) {
             </ul>
           </section>
         )}
+
+        <NewsletterInline offer={offer} source="post-end" />
 
         {post.author && (
           <AuthorBox
@@ -715,6 +758,7 @@ function BlogPost({ post, related = [] }) {
           </Link>
         </div>
       </div>
+      <NewsletterSlideIn offer={offer} />
     </>
   );
 }
@@ -780,7 +824,11 @@ function GuidePage({ guide }) {
           })}
         </article>
       </div>
+      <div className="mx-auto max-w-3xl px-4 md:px-6">
+        <NewsletterInline source="guide-end" />
+      </div>
       <FinalCTA />
+      <NewsletterSlideIn />
     </>
   );
 }

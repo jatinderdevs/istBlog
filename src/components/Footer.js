@@ -1,29 +1,6 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import useNewsletterForm from "./newsletter/useNewsletterForm";
 import { CONTACT_EMAIL } from "@/lib/seo";
-
-function Spinner() {
-  return (
-    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
-  );
-}
 
 const SOCIALS = [
   {
@@ -68,108 +45,9 @@ const columnLink = "text-sm text-white/70 transition-colors hover:text-white";
 
 export default function Footer({ settings, categories }) {
   const topics = categories?.length ? categories : FALLBACK_TOPICS;
-  const {
-    firstName,
-    email,
-    formState,
-    errorMessage,
-    handleChange,
-    handleSubmit,
-  } = useNewsletterForm();
 
   return (
     <footer className="mt-24 bg-green-800 text-white">
-      {/* Newsletter card, overlapping the top edge of the footer */}
-      <div id="newsletter" className="mx-auto max-w-6xl scroll-mt-24 px-6">
-        <div className="-mt-14 rounded-3xl bg-[var(--brand-green)] px-6 py-8 shadow-xl shadow-green-900/20 md:px-10 md:py-10">
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-            <div className="max-w-md">
-              <h2 className="text-xl font-semibold text-white md:text-2xl">
-                Get free tips &amp; updates
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/80">
-                Visa news, money tips and housing guides, straight to your
-                inbox. No spam, unsubscribe any time.
-              </p>
-            </div>
-
-            {formState === "success" ? (
-              <div
-                role="status"
-                className="flex items-center gap-2 rounded-xl bg-white/15 px-5 py-3 text-white"
-              >
-                <svg
-                  className="h-5 w-5 shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span className="text-sm font-medium">
-                  You&apos;re in! Check your inbox.
-                </span>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit}
-                className="flex w-full flex-col gap-3 sm:flex-row md:w-auto"
-              >
-                <label htmlFor="footer-first-name" className="sr-only">
-                  First name
-                </label>
-                <input
-                  id="footer-first-name"
-                  type="text"
-                  placeholder="First name"
-                  value={firstName}
-                  onChange={(e) => handleChange("firstName", e.target.value)}
-                  disabled={formState === "loading"}
-                  className="w-full rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/60 focus:border-white focus:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-36"
-                />
-                <label htmlFor="footer-email" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="footer-email"
-                  type="email"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  disabled={formState === "loading"}
-                  className="w-full rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/60 focus:border-white focus:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-56"
-                />
-                <button
-                  type="submit"
-                  disabled={formState === "loading"}
-                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-green)] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {formState === "loading" ? (
-                    <>
-                      <Spinner />
-                      Subscribing...
-                    </>
-                  ) : (
-                    "Subscribe"
-                  )}
-                </button>
-              </form>
-            )}
-          </div>
-          {formState === "error" && errorMessage && (
-            <p role="alert" className="mt-4 text-sm text-red-100">
-              {errorMessage}
-            </p>
-          )}
-        </div>
-      </div>
-
       {/* Main footer */}
       <div className="mx-auto max-w-6xl px-6 pt-14 pb-8">
         <div className="grid gap-12 md:grid-cols-12">

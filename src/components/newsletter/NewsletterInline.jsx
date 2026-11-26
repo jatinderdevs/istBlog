@@ -1,6 +1,7 @@
 "use client";
 
 import useNewsletterForm from "./useNewsletterForm";
+import { DEFAULT_OFFER } from "@/lib/newsletter";
 
 function Spinner() {
   return (
@@ -11,50 +12,75 @@ function Spinner() {
   );
 }
 
-export default function NewsletterInline() {
-  const { firstName, email, formState, errorMessage, handleChange, handleSubmit } = useNewsletterForm();
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-[var(--brand-green)] focus:ring-1 focus:ring-[var(--brand-green)] disabled:cursor-not-allowed disabled:opacity-60";
+
+// Inline signup card. `offer` comes from src/lib/newsletter.js; `source`
+// records where the form sits (see useNewsletterForm).
+export default function NewsletterInline({ offer = DEFAULT_OFFER, source = "inline" }) {
+  const { firstName, email, formState, errorMessage, handleChange, handleSubmit } =
+    useNewsletterForm(source);
 
   if (formState === "success") {
     return (
-      <section className="my-12 rounded-2xl border-l-4 border-[var(--brand-green)] bg-white p-8 shadow-md">
+      <section
+        data-newsletter-form
+        className="my-12 rounded-2xl border-l-4 border-[var(--brand-green)] bg-white p-8 shadow-md"
+      >
         <div className="flex flex-col items-center text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
             <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900">You&apos;re in! Welcome to the community.</h3>
-          <p className="mt-2 text-sm text-gray-500">Check your inbox for a confirmation email.</p>
+          <p className="text-xl font-bold text-gray-900">You&apos;re subscribed. Welcome!</p>
+          <p className="mt-2 text-sm text-gray-500">
+            Our next guide will land in your inbox. Add our email to your contacts so it doesn&apos;t go to spam.
+          </p>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="my-12 rounded-2xl border-l-4 border-[var(--brand-green)] bg-white p-8 shadow-md">
-      <h3 className="text-xl font-bold text-gray-900">Get More Guides Like This</h3>
-      <p className="mt-2 text-sm leading-relaxed text-gray-500">
-        Join thousands of international students getting free tips, visa updates and money-saving advice straight to their inbox.
-      </p>
+    <section
+      data-newsletter-form
+      aria-label="Newsletter signup"
+      className="my-12 rounded-2xl border-l-4 border-[var(--brand-green)] bg-white p-8 shadow-md"
+    >
+      {/* A <p>, not a heading, so the form doesn't add to the post's heading outline. */}
+      <p className="text-xl font-bold text-gray-900">{offer.headline}</p>
+      <p className="mt-2 text-sm leading-relaxed text-gray-500">{offer.description}</p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
         <div className="flex flex-col gap-4 sm:flex-row">
-          <input
-            type="text"
-            placeholder="First Name"
-            value={firstName}
-            onChange={(e) => handleChange("firstName", e.target.value)}
-            disabled={formState === "loading"}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-[var(--brand-green)] focus:ring-1 focus:ring-[var(--brand-green)] disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => handleChange("email", e.target.value)}
-            disabled={formState === "loading"}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-[var(--brand-green)] focus:ring-1 focus:ring-[var(--brand-green)] disabled:cursor-not-allowed disabled:opacity-60"
-          />
+          <label className="w-full">
+            <span className="sr-only">First name (optional)</span>
+            <input
+              type="text"
+              name="firstName"
+              autoComplete="given-name"
+              placeholder="First name (optional)"
+              value={firstName}
+              onChange={(e) => handleChange("firstName", e.target.value)}
+              disabled={formState === "loading"}
+              className={inputClass}
+            />
+          </label>
+          <label className="w-full">
+            <span className="sr-only">Email address</span>
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              required
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => handleChange("email", e.target.value)}
+              disabled={formState === "loading"}
+              className={inputClass}
+            />
+          </label>
         </div>
 
         <button
@@ -68,17 +94,17 @@ export default function NewsletterInline() {
               Subscribing...
             </>
           ) : (
-            "Send Me Free Tips →"
+            `${offer.button} →`
           )}
         </button>
 
         {formState === "error" && errorMessage && (
-          <p className="text-sm text-red-600">{errorMessage}</p>
+          <p className="text-sm text-red-600" role="alert">{errorMessage}</p>
         )}
       </form>
 
       <p className="mt-4 text-xs text-gray-400">
-        No spam. Unsubscribe anytime. We respect your privacy.
+        Free. No spam. Unsubscribe anytime. We respect your privacy.
       </p>
     </section>
   );

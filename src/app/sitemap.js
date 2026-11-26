@@ -104,6 +104,11 @@ export default async function sitemap() {
       changeFrequency: "monthly",
       priority: 0.5,
     },
+    {
+      url: canonicalUrl("/newsletter"),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
     ...categoryUrls,
     ...authorUrls,
     ...articleUrls,

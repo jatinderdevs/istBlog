@@ -11,8 +11,9 @@ function Spinner() {
   );
 }
 
-export default function NewsletterBanner() {
-  const { firstName, email, formState, errorMessage, handleChange, handleSubmit } = useNewsletterForm();
+export default function NewsletterBanner({ source = "home" }) {
+  const { firstName, email, formState, errorMessage, handleChange, handleSubmit } =
+    useNewsletterForm(source);
 
   if (formState === "success") {
     return (
@@ -23,8 +24,8 @@ export default function NewsletterBanner() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold md:text-3xl">You&apos;re in! Welcome to the community.</h2>
-          <p className="mt-3 text-white/80">Check your inbox for a confirmation email.</p>
+          <h2 className="text-2xl font-bold md:text-3xl">You&apos;re subscribed. Welcome!</h2>
+          <p className="mt-3 text-white/80">Our next guide will land in your inbox. Add our email to your contacts so it doesn&apos;t go to spam.</p>
         </div>
       </section>
     );
@@ -38,11 +39,13 @@ export default function NewsletterBanner() {
           Free guides, visa tips and student life advice — delivered to your inbox.
         </p>
 
-        <form onSubmit={handleSubmit} className="mx-auto mt-8 max-w-xl">
+        <form onSubmit={handleSubmit} className="mx-auto mt-8 max-w-xl" noValidate>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
               type="text"
-              placeholder="First Name"
+              placeholder="First name (optional)"
+              aria-label="First name (optional)"
+              autoComplete="given-name"
               value={firstName}
               onChange={(e) => handleChange("firstName", e.target.value)}
               disabled={formState === "loading"}
@@ -50,7 +53,10 @@ export default function NewsletterBanner() {
             />
             <input
               type="email"
-              placeholder="Email Address"
+              placeholder="Email address"
+              aria-label="Email address"
+              autoComplete="email"
+              required
               value={email}
               onChange={(e) => handleChange("email", e.target.value)}
               disabled={formState === "loading"}
@@ -67,7 +73,7 @@ export default function NewsletterBanner() {
                   Subscribing...
                 </>
               ) : (
-                "Subscribe"
+                "Send me new guides"
               )}
             </button>
           </div>

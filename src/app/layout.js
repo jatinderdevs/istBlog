@@ -20,7 +20,7 @@ import {
 const geist = Geist({ subsets: ["latin"] });
 
 const GA_ID = "G-5FSDSPEZC9";
-const CLARITY_ID = "tue38alcfi";
+const CLARITY_ID = "zjkddq074b";
 
 export const viewport = {
   themeColor: "#048442",
@@ -46,12 +46,32 @@ export async function generateMetadata() {
     applicationName: SITE_NAME,
     manifest: "/favicon/site.webmanifest",
     icons: {
+      // Google only uses favicons that are a multiple of 48px, so the 48px
+      // .ico and the 192px PNG are what appear in search results.
       icon: [
-        { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-        { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+        {
+          url: "/favicon/favicon-16x16.png",
+          sizes: "16x16",
+          type: "image/png",
+        },
+        {
+          url: "/favicon/favicon-32x32.png",
+          sizes: "32x32",
+          type: "image/png",
+        },
+        {
+          url: "/favicon/android-chrome-192x192.png",
+          sizes: "192x192",
+          type: "image/png",
+        },
       ],
       apple: [
-        { url: "/favicon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        {
+          url: "/favicon/apple-touch-icon.png",
+          sizes: "180x180",
+          type: "image/png",
+        },
       ],
     },
     openGraph: {
