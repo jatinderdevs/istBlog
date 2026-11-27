@@ -145,6 +145,7 @@ export const settingsQuery = groq`
     heroHeading,
     heroSubtext,
     heroButtonText,
+    heroImage,
     footerTagline,
   }
 `;

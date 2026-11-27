@@ -37,6 +37,22 @@ export const settingsType = defineType({
       description: "The paragraph below the hero heading",
     }),
     defineField({
+      name: "heroImage",
+      title: "Homepage Hero Image",
+      type: "image",
+      description:
+        "Photo shown beside the hero text (landscape or portrait, at least 1200px wide). Falls back to the featured post image.",
+      options: { hotspot: true },
+      fields: [
+        defineField({
+          name: "alt",
+          title: "Alt text",
+          type: "string",
+          description: "Describe the photo for screen readers and SEO",
+        }),
+      ],
+    }),
+    defineField({
       name: "heroButtonText",
       title: "Hero Button Text",
       type: "string",

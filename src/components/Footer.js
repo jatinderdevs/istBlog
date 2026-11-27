@@ -175,7 +175,15 @@ export default function Footer({ settings, categories }) {
           </p>
           <p className="mt-4 text-xs text-white/50">
             © {new Date().getFullYear()} International Student Tips. All rights
-            reserved.
+            reserved. Designed and developed by{" "}
+            <a
+              href="https://slashkode.com.au"
+              className="text-white"
+              target="_blank"
+              rel="noopener"
+            >
+              Slashkode
+            </a>
           </p>
         </div>
       </div>
