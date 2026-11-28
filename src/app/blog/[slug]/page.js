@@ -29,6 +29,7 @@ import FinalCTA from "@/components/blog/FinalCTA";
 import NewsletterSlideIn from "@/components/newsletter/NewsletterSlideIn";
 import { offerForCategory } from "@/lib/newsletter";
 import AuthorBox from "@/components/blog/AuthorBox";
+import PreferredSourceButton from "@/components/blog/PreferredSourceButton";
 import {
   articleJsonLd,
   breadcrumbJsonLd,
@@ -672,6 +673,8 @@ function BlogPost({ post, related = [] }) {
           </section>
         )}
 
+        <PreferredSourceButton location="post-end" />
+
         <NewsletterInline offer={offer} source="post-end" />
 
         {post.author && (
@@ -825,6 +828,7 @@ function GuidePage({ guide }) {
         </article>
       </div>
       <div className="mx-auto max-w-3xl px-4 md:px-6">
+        <PreferredSourceButton location="guide-end" />
         <NewsletterInline source="guide-end" />
       </div>
       <FinalCTA />

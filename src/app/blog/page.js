@@ -7,6 +7,7 @@ import {
 } from "../../../sanity/lib/queries";
 import BlogPostGrid from "@/components/blog/BlogPostGrid";
 import GuideCard from "@/components/blog/GuideCard";
+import PreferredSourceButton from "@/components/blog/PreferredSourceButton";
 import {
   breadcrumbJsonLd,
   canonicalUrl,
@@ -146,6 +147,10 @@ export default async function BlogPage() {
           </h2>
           <BlogPostGrid posts={posts} />
         </section>
+
+        <div className="mx-auto max-w-3xl">
+          <PreferredSourceButton location="blog-listing" />
+        </div>
       </div>
     </>
   );
